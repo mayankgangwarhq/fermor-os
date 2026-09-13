@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { DiseaseDetectionService } from '../services/diseaseDetection.service';
+import { CropDiseaseVisionService } from '../services/cropDiseaseVision.service';
 import { sendSuccess, sendCreated } from '../utils/apiResponse';
 import { AuthRequest } from '../middleware/auth.middleware';
 
@@ -27,7 +28,7 @@ export class DiseaseController {
     try {
       const farmerId = req.user?.id || req.body.farmerId;
       const farmId = req.body.farmId;
-      const diagnosis = await DiseaseDetectionService.analyzeImageAndDiagnose(req.body, farmerId, farmId);
+      const diagnosis = await CropDiseaseVisionService.analyzeImage(req.body, farmerId, farmId);
       return sendSuccess(res, diagnosis, 'Diagnostic analysis completed successfully');
     } catch (error) {
       next(error);

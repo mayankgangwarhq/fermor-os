@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { sendSuccess, sendCreated } from '../utils/apiResponse';
 import { isDbConnected } from '../config/db';
+import { buildIdQuery } from '../utils/dbHelper';
 import { HotspotModel } from '../models/Hotspot';
 import { ScanCaseModel } from '../models/ScanCase';
 import { PestObservationModel } from '../models/PestObservation';
@@ -415,8 +416,9 @@ export class SihController {
       }
 
       if (isDbConnected()) {
+        const query = buildIdQuery(caseId);
         await ScanCaseModel.findOneAndUpdate(
-          { $or: [{ id: caseId }, { _id: caseId }] },
+          query,
           {
             expertStatus: target?.expertStatus,
             expertReview: target?.expertReview,

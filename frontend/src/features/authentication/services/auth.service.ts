@@ -7,6 +7,16 @@ export const authService = {
     return res.data?.data || res.data;
   },
 
+  sendAadhaarOtp: async (aadhaarNumber: string): Promise<{ demoOtp: string; aadhaarLast4: string; message: string }> => {
+    const res = await apiClient.post('/auth/aadhaar/send-otp', { aadhaarNumber });
+    return res.data?.data || res.data;
+  },
+
+  verifyAadhaarOtp: async (aadhaarNumber: string, otp: string): Promise<{ user: User; token: string }> => {
+    const res = await apiClient.post('/auth/aadhaar/verify-otp', { aadhaarNumber, otp });
+    return res.data?.data || res.data;
+  },
+
   register: async (data: RegisterData): Promise<{ user: User; token: string }> => {
     const res = await apiClient.post('/auth/register', data);
     return res.data?.data || res.data;

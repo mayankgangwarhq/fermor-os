@@ -19,6 +19,9 @@ export interface IUser {
   language?: string;
   avatar?: string;
   bio?: string;
+  authMethod?: 'email' | 'aadhaar_demo';
+  aadhaarHash?: string;
+  aadhaarLast4?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }
@@ -165,29 +168,74 @@ export interface IAlert {
   updatedAt?: Date | string;
 }
 
+export type VisionAnalysisStatus =
+  | 'success'
+  | 'uncertain'
+  | 'low_quality'
+  | 'invalid_image'
+  | 'missing_api_key'
+  | 'vision_request_failed'
+  | 'model_response_invalid'
+  | 'network_error'
+  | 'analysis_unavailable';
+
+export type DiagnosticType = 'disease' | 'pest' | 'healthy' | 'unknown';
+
 export interface IDiagnosisRequest {
   cropName?: string;
   symptoms?: string[];
   notes?: string;
   imageUrl?: string;
   imageBase64?: string;
+  language?: string;
 }
 
 export interface IDiagnosisResult {
+  id?: string;
   isMockDemo: boolean;
+  status: VisionAnalysisStatus;
+  diagnosisType?: DiagnosticType;
+
+  // Standard structured response contract
+  success?: boolean;
+  isPlant?: boolean;
+  crop?: string;
+  disease?: string;
+  pathogen?: string;
+  confidence?: number;
+  severity?: string;
+  symptoms?: string[];
+  recommendations?: string[];
+  reasoning?: string;
+
   cropName: string;
+  detectedCrop?: {
+    name: string;
+    confidence: number;
+    matchedUserSelection: boolean;
+    note?: string;
+  };
   suspectedIssue: string;
+  scientificName?: string;
   confidenceScore: number;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   observedSymptoms: string[];
+  userReportedSymptoms?: string[];
+  visualEvidence?: string[];
+  possibleCauses?: string[];
   generalExplanation: string;
+  analysisNote?: string;
   preventiveSuggestions: string[];
+  ipmAdvisory?: any;
   recommendedTreatments: {
     organic: string[];
     chemical: string[];
   };
   nextSteps: string[];
   sourceStatus: string;
+  requiresLabVerification?: boolean;
+  needsExpertReview?: boolean;
+  timestamp?: string;
 }
 
 export interface IScanCase {
@@ -464,3 +512,61 @@ export interface IExpertReviewPayload {
   recommendedAction?: string;
   targetLabName?: string;
 }
+
+export interface IMandiPrice {
+  _id?: string;
+  id?: string;
+  commodity: string;
+  variety?: string;
+  grade?: string;
+  market: string;
+  district: string;
+  state: string;
+  modalPrice: number;
+  minPrice: number;
+  maxPrice: number;
+  priceUnit: string;
+  priceChangePercent?: number;
+  trend?: 'up' | 'down' | 'stable';
+  arrivalTonnes?: number;
+  date: string;
+  isDemo?: boolean;
+  sourceStatus?: 'DEMO DATA' | 'LIVE DATA';
+  notes?: string;
+}
+
+export interface IScheme {
+  _id?: string;
+  id?: string;
+  title: string;
+  titleHi?: string;
+  category: 'direct_benefit' | 'subsidy' | 'insurance' | 'infrastructure' | 'credit';
+  sponsor: 'Central Govt' | 'State Govt' | 'NABARD' | 'Joint';
+  benefitSummary: string;
+  benefitSummaryHi?: string;
+  eligibilityCriteria: string[];
+  documentsRequired: string[];
+  subsidyPercentage?: number;
+  maxFinancialAssistance?: string;
+  applicationUrl?: string;
+  applicationDeadline?: string;
+  active: boolean;
+}
+
+export interface IDashboardStats {
+  totalFarms: number;
+  totalLandAcres: number;
+  activeCropCycles: number;
+  criticalAlerts: number;
+  weatherOverview: {
+    temp: number;
+    condition: string;
+    humidity: number;
+    rainChance: number;
+    location: string;
+  };
+  recentScans: any[];
+  recentAlerts: any[];
+  topMandiRates: any[];
+}
+

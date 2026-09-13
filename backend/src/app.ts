@@ -12,7 +12,22 @@ const app: Express = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: [config.clientUrl, 'http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, Postman)
+      if (!origin) return callback(null, true);
+      const allowedOrigins = [
+        config.clientUrl,
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://localhost:4173',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:3000',
+      ];
+      if (allowedOrigins.includes(origin) || origin.startsWith('http://localhost:')) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Permissive in dev mode
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -25,13 +40,13 @@ if (config.nodeEnv !== 'test') {
 }
 
 // Body Parsers
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // API Root
 app.get('/', (req, res) => {
   res.json({
-    service: 'Farmer OS Core API',
+    service: 'AGRINEXT Core Agritech API',
     version: '1.0.0',
     status: 'online',
     docs: '/api/health',

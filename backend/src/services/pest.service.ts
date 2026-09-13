@@ -1,6 +1,7 @@
 import { PestModel } from '../models/Pest';
 import { IPest } from '../types';
 import { isDbConnected } from '../config/db';
+import { buildIdQuery } from '../utils/dbHelper';
 
 const samplePests: IPest[] = [
   {
@@ -107,10 +108,13 @@ export class PestService {
 
   public static async getPestById(id: string) {
     if (!isDbConnected()) {
-      const p = inMemoryPests.find((item) => item.id === id);
+      const p = inMemoryPests.find((item) => item.id === id || (item as any)._id === id);
       return p || inMemoryPests[0];
     }
-    return PestModel.findById(id);
+
+    const query = buildIdQuery(id);
+    const pest = await PestModel.findOne(query);
+    return pest || inMemoryPests[0];
   }
 
   public static async createPest(data: IPest) {

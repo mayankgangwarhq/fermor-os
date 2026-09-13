@@ -3,6 +3,7 @@ import { FarmModel } from '../models/Farm';
 import { ApiError } from '../utils/apiError';
 import { IFarmer } from '../types';
 import { isDbConnected } from '../config/db';
+import { buildIdQuery } from '../utils/dbHelper';
 
 export class FarmerService {
   public static async getFarmers() {
@@ -34,7 +35,9 @@ export class FarmerService {
         kycStatus: 'verified',
       };
     }
-    const farmer = await FarmerModel.findOne({ $or: [{ _id: id }, { farmerId: id }, { userId: id }] });
+
+    const query = buildIdQuery(id, ['id', 'farmerId', 'userId']);
+    const farmer = await FarmerModel.findOne(query);
     if (!farmer) {
       throw ApiError.notFound(`Farmer record for ${id} not found`);
     }
@@ -45,8 +48,10 @@ export class FarmerService {
     if (!isDbConnected()) {
       return { id, ...updateData };
     }
+
+    const query = buildIdQuery(id, ['id', 'farmerId', 'userId']);
     const farmer = await FarmerModel.findOneAndUpdate(
-      { $or: [{ _id: id }, { farmerId: id }, { userId: id }] },
+      query,
       updateData,
       { new: true, runValidators: true }
     );

@@ -3,6 +3,7 @@ import { CropModel } from '../models/Crop';
 import { ApiError } from '../utils/apiError';
 import { IFarm } from '../types';
 import { isDbConnected } from '../config/db';
+import { buildIdQuery } from '../utils/dbHelper';
 
 const sampleFarmsFallback: IFarm[] = [
   {
@@ -56,14 +57,15 @@ export class FarmService {
 
   public static async getFarmById(id: string) {
     if (!isDbConnected()) {
-      const found = inMemoryFarms.find((f) => f.id === id);
+      const found = inMemoryFarms.find((f) => f.id === id || (f as any)._id === id);
       if (!found) {
         throw ApiError.notFound(`Farm with ID ${id} not found`);
       }
       return found;
     }
 
-    const farm = await FarmModel.findById(id);
+    const query = buildIdQuery(id);
+    const farm = await FarmModel.findOne(query);
     if (!farm) {
       throw ApiError.notFound(`Farm with ID ${id} not found`);
     }
@@ -86,7 +88,7 @@ export class FarmService {
 
   public static async updateFarm(id: string, updateData: Partial<IFarm>) {
     if (!isDbConnected()) {
-      const idx = inMemoryFarms.findIndex((f) => f.id === id);
+      const idx = inMemoryFarms.findIndex((f) => f.id === id || (f as any)._id === id);
       if (idx === -1) {
         throw ApiError.notFound(`Farm with ID ${id} not found`);
       }
@@ -94,7 +96,8 @@ export class FarmService {
       return inMemoryFarms[idx];
     }
 
-    const farm = await FarmModel.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+    const query = buildIdQuery(id);
+    const farm = await FarmModel.findOneAndUpdate(query, updateData, { new: true, runValidators: true });
     if (!farm) {
       throw ApiError.notFound(`Farm with ID ${id} not found`);
     }
@@ -103,15 +106,17 @@ export class FarmService {
 
   public static async deleteFarm(id: string) {
     if (!isDbConnected()) {
-      inMemoryFarms = inMemoryFarms.filter((f) => f.id !== id);
+      inMemoryFarms = inMemoryFarms.filter((f) => f.id !== id && (f as any)._id !== id);
       return true;
     }
 
-    const farm = await FarmModel.findByIdAndDelete(id);
+    const query = buildIdQuery(id);
+    const farm = await FarmModel.findOneAndDelete(query);
     if (!farm) {
       throw ApiError.notFound(`Farm with ID ${id} not found`);
     }
-    await CropModel.deleteMany({ farmId: id });
+    const farmIdStr = farm._id ? farm._id.toString() : id;
+    await CropModel.deleteMany({ farmId: farmIdStr });
     return true;
   }
 }

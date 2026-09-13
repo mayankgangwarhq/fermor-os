@@ -8,12 +8,12 @@ export class HealthController {
       status: 'healthy',
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
-      service: 'Farmer OS Core API',
+      service: 'AGRINEXT Agritech Core API',
       version: '1.0.0',
       database: getDbStatus(),
       environment: process.env.NODE_ENV || 'development',
     };
 
-    return sendSuccess(res, healthData, 'Farmer OS API is healthy and operational');
+    return sendSuccess(res, healthData, 'AGRINEXT Agritech API is healthy and operational');
   }
 }

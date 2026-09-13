@@ -29,8 +29,19 @@ export interface RegisterDTO {
   password: string;
   role?: UserRole;
   phone?: string;
+  aadhaarNumber?: string;
   state?: string;
   district?: string;
   village?: string;
   language?: string;
 }
+
+export interface AadhaarSendOtpDTO {
+  aadhaarNumber: string;
+}
+
+export interface AadhaarVerifyOtpDTO {
+  aadhaarNumber: string;
+  otp: string;
+}
+

@@ -2,6 +2,7 @@ import { AlertModel } from '../models/Alert';
 import { ApiError } from '../utils/apiError';
 import { IAlert, AlertSeverity, AlertType } from '../types';
 import { isDbConnected } from '../config/db';
+import { buildIdQuery } from '../utils/dbHelper';
 
 const sampleAlertsFallback: IAlert[] = [
   {
@@ -68,6 +69,8 @@ export class AlertService {
   }) {
     if (!isDbConnected()) {
       let filtered = [...inMemoryAlerts];
+      if (filter?.farmerId) filtered = filtered.filter((a) => a.farmerId === filter.farmerId);
+      if (filter?.farmId) filtered = filtered.filter((a) => a.farmId === filter.farmId);
       if (filter?.severity) filtered = filtered.filter((a) => a.severity === filter.severity);
       if (filter?.type) filtered = filtered.filter((a) => a.type === filter.type);
       if (filter?.unreadOnly) filtered = filtered.filter((a) => !a.read);
@@ -86,14 +89,15 @@ export class AlertService {
 
   public static async getAlertById(id: string) {
     if (!isDbConnected()) {
-      const alert = inMemoryAlerts.find((a) => a.id === id);
+      const alert = inMemoryAlerts.find((a) => a.id === id || (a as any)._id === id);
       if (!alert) {
         throw ApiError.notFound(`Alert with ID ${id} not found`);
       }
       return alert;
     }
 
-    const alert = await AlertModel.findById(id);
+    const query = buildIdQuery(id);
+    const alert = await AlertModel.findOne(query);
     if (!alert) {
       throw ApiError.notFound(`Alert with ID ${id} not found`);
     }
@@ -117,7 +121,7 @@ export class AlertService {
 
   public static async markRead(id: string) {
     if (!isDbConnected()) {
-      const idx = inMemoryAlerts.findIndex((a) => a.id === id);
+      const idx = inMemoryAlerts.findIndex((a) => a.id === id || (a as any)._id === id);
       if (idx !== -1) {
         inMemoryAlerts[idx].read = true;
         return inMemoryAlerts[idx];
@@ -125,7 +129,8 @@ export class AlertService {
       return null;
     }
 
-    return AlertModel.findByIdAndUpdate(id, { read: true }, { new: true });
+    const query = buildIdQuery(id);
+    return AlertModel.findOneAndUpdate(query, { read: true }, { new: true });
   }
 
   public static async markAllRead(farmerId?: string) {
@@ -145,11 +150,12 @@ export class AlertService {
 
   public static async deleteAlert(id: string) {
     if (!isDbConnected()) {
-      inMemoryAlerts = inMemoryAlerts.filter((a) => a.id !== id);
+      inMemoryAlerts = inMemoryAlerts.filter((a) => a.id !== id && (a as any)._id !== id);
       return true;
     }
 
-    await AlertModel.findByIdAndDelete(id);
+    const query = buildIdQuery(id);
+    await AlertModel.findOneAndDelete(query);
     return true;
   }
 }

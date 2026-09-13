@@ -1,5 +1,6 @@
 import { DiagnosticCaseModel } from '../models/DiagnosticCase';
 import { isDbConnected } from '../config/db';
+import { buildIdQuery } from '../utils/dbHelper';
 import { ConfidenceEngineService } from './confidenceEngine.service';
 import { DiseaseDetectionService } from './diseaseDetection.service';
 import {
@@ -362,14 +363,15 @@ export class DiagnosticCaseService {
   public static async getCaseById(id: string): Promise<IDiagnosticCase | null> {
     if (isDbConnected()) {
       try {
-        const doc = await DiagnosticCaseModel.findOne({ $or: [{ _id: id }, { id }] });
+        const query = buildIdQuery(id);
+        const doc = await DiagnosticCaseModel.findOne(query);
         if (doc) return doc.toJSON();
       } catch (err) {
         console.warn('[DiagnosticCaseService] DB getCaseById failed, checking memory store:', err);
       }
     }
 
-    return inMemoryCases.find((c) => c.id === id || c._id === id) || null;
+    return inMemoryCases.find((c) => c.id === id || (c as any)._id === id) || null;
   }
 
   /**
@@ -412,8 +414,9 @@ export class DiagnosticCaseService {
 
     if (isDbConnected()) {
       try {
+        const query = buildIdQuery(caseId);
         await DiagnosticCaseModel.findOneAndUpdate(
-          { $or: [{ _id: caseId }, { id: caseId }] },
+          query,
           {
             $set: {
               clarificationAnswers: targetCase.clarificationAnswers,
@@ -467,8 +470,9 @@ export class DiagnosticCaseService {
 
     if (isDbConnected()) {
       try {
+        const query = buildIdQuery(caseId);
         await DiagnosticCaseModel.findOneAndUpdate(
-          { $or: [{ _id: caseId }, { id: caseId }] },
+          query,
           {
             $set: {
               decisionStatus: 'EXPERT_REVIEW',
@@ -554,8 +558,9 @@ export class DiagnosticCaseService {
 
     if (isDbConnected()) {
       try {
+        const query = buildIdQuery(caseId);
         await DiagnosticCaseModel.findOneAndUpdate(
-          { $or: [{ _id: caseId }, { id: caseId }] },
+          query,
           {
             $set: {
               decisionStatus: newDecisionStatus,

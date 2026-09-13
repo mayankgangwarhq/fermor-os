@@ -12,7 +12,9 @@ export interface AuthContextType {
   isOnboarded: boolean;
   completeOnboarding: (data: Partial<User>) => void;
   login: (emailOrPhone: string, password?: string, role?: UserRole) => Promise<void>;
-  register: (name: string, email: string, password?: string, role?: UserRole, phone?: string) => Promise<void>;
+  sendAadhaarOtp: (aadhaarNumber: string) => Promise<{ demoOtp: string; aadhaarLast4: string; message: string }>;
+  loginWithAadhaarOtp: (aadhaarNumber: string, otp: string) => Promise<void>;
+  register: (payload: { name: string; email: string; password?: string; role?: UserRole; phone?: string; aadhaarNumber?: string; state?: string; district?: string; village?: string }) => Promise<void>;
   logout: () => void;
   demoMode: boolean;
   isLoading: boolean;
@@ -80,53 +82,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAuthenticated(true);
         return;
       }
-    } catch (err) {
-      console.warn('[AuthContext] Backend login API unavailable, using offline demo session:', err);
+      throw new Error('Invalid email or password');
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.message || 'Invalid email or password';
+      throw new Error(message);
     } finally {
       setIsLoading(false);
     }
-
-    // Fallback login
-    const found = sampleUsers.find((u) => u.email === emailOrPhone || u.phone === emailOrPhone) || {
-      ...initialUser,
-      email: emailOrPhone.includes('@') ? emailOrPhone : 'farmer@farmer-os.agri',
-      role,
-    };
-    setCurrentUser(found);
-    authService.saveSession('demo_token_' + Date.now(), found);
-    setIsAuthenticated(true);
   };
 
-  const register = async (name: string, email: string, password?: string, role: UserRole = 'farmer', phone?: string) => {
+  const sendAadhaarOtp = async (aadhaarNumber: string) => {
     setIsLoading(true);
     try {
-      const res = await authService.register({ name, email, password, role, phone });
+      return await authService.sendAadhaarOtp(aadhaarNumber);
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.message || 'Failed to generate Aadhaar OTP';
+      throw new Error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithAadhaarOtp = async (aadhaarNumber: string, otp: string) => {
+    setIsLoading(true);
+    try {
+      const res = await authService.verifyAadhaarOtp(aadhaarNumber, otp);
       if (res?.user && res?.token) {
         setCurrentUser(res.user);
         authService.saveSession(res.token, res.user);
         setIsAuthenticated(true);
         return;
       }
-    } catch (err) {
-      console.warn('[AuthContext] Backend register API unavailable, using local demo session:', err);
+      throw new Error('Invalid OTP');
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.message || 'Invalid OTP';
+      throw new Error(message);
     } finally {
       setIsLoading(false);
     }
+  };
 
-    const newUser: User = {
-      id: `usr-${Date.now()}`,
-      name,
-      email,
-      phone: phone || '+91 98765 00000',
-      role,
-      state: 'Rajasthan',
-      district: 'Jaipur',
-      village: 'Jagatpura (VGU)',
-      language: 'en',
-    };
-    setCurrentUser(newUser);
-    authService.saveSession('demo_token_' + Date.now(), newUser);
-    setIsAuthenticated(true);
+  const register = async (payload: { name: string; email: string; password?: string; role?: UserRole; phone?: string; aadhaarNumber?: string; state?: string; district?: string; village?: string }) => {
+    setIsLoading(true);
+    try {
+      const res = await authService.register(payload);
+      if (res?.user && res?.token) {
+        setCurrentUser(res.user);
+        authService.saveSession(res.token, res.user);
+        setIsAuthenticated(true);
+        return;
+      }
+      throw new Error('Registration failed');
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.message || 'Registration failed';
+      throw new Error(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logout = () => {
@@ -146,6 +158,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isOnboarded,
         completeOnboarding,
         login,
+        sendAadhaarOtp,
+        loginWithAadhaarOtp,
         register,
         logout,
         demoMode: true,
@@ -156,6 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
+
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

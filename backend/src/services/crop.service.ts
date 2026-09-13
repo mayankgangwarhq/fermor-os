@@ -2,6 +2,7 @@ import { CropModel } from '../models/Crop';
 import { ApiError } from '../utils/apiError';
 import { ICrop, CropStatus } from '../types';
 import { isDbConnected } from '../config/db';
+import { buildIdQuery } from '../utils/dbHelper';
 
 const sampleCropsFallback: ICrop[] = [
   {
@@ -54,6 +55,7 @@ export class CropService {
     if (!isDbConnected()) {
       let filtered = [...inMemoryCrops];
       if (filter?.farmId) filtered = filtered.filter((c) => c.farmId === filter.farmId);
+      if (filter?.farmerId) filtered = filtered.filter((c) => c.farmerId === filter.farmerId);
       if (filter?.status) filtered = filtered.filter((c) => c.status === filter.status);
       return filtered;
     }
@@ -68,14 +70,15 @@ export class CropService {
 
   public static async getCropById(id: string) {
     if (!isDbConnected()) {
-      const crop = inMemoryCrops.find((c) => c.id === id);
+      const crop = inMemoryCrops.find((c) => c.id === id || (c as any)._id === id);
       if (!crop) {
         throw ApiError.notFound(`Crop with ID ${id} not found`);
       }
       return crop;
     }
 
-    const crop = await CropModel.findById(id);
+    const query = buildIdQuery(id);
+    const crop = await CropModel.findOne(query);
     if (!crop) {
       throw ApiError.notFound(`Crop with ID ${id} not found`);
     }
@@ -98,7 +101,7 @@ export class CropService {
 
   public static async updateCrop(id: string, updateData: Partial<ICrop>) {
     if (!isDbConnected()) {
-      const idx = inMemoryCrops.findIndex((c) => c.id === id);
+      const idx = inMemoryCrops.findIndex((c) => c.id === id || (c as any)._id === id);
       if (idx === -1) {
         throw ApiError.notFound(`Crop with ID ${id} not found`);
       }
@@ -106,7 +109,8 @@ export class CropService {
       return inMemoryCrops[idx];
     }
 
-    const crop = await CropModel.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+    const query = buildIdQuery(id);
+    const crop = await CropModel.findOneAndUpdate(query, updateData, { new: true, runValidators: true });
     if (!crop) {
       throw ApiError.notFound(`Crop with ID ${id} not found`);
     }
@@ -119,11 +123,12 @@ export class CropService {
 
   public static async deleteCrop(id: string) {
     if (!isDbConnected()) {
-      inMemoryCrops = inMemoryCrops.filter((c) => c.id !== id);
+      inMemoryCrops = inMemoryCrops.filter((c) => c.id !== id && (c as any)._id !== id);
       return true;
     }
 
-    const crop = await CropModel.findByIdAndDelete(id);
+    const query = buildIdQuery(id);
+    const crop = await CropModel.findOneAndDelete(query);
     if (!crop) {
       throw ApiError.notFound(`Crop with ID ${id} not found`);
     }

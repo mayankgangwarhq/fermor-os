@@ -12,6 +12,8 @@ import type {
   DiseaseData,
   DiagnosticCase,
   ExpertReviewPayload,
+  MandiPrice,
+  MandiFilterOptions,
 } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -129,8 +131,8 @@ export const diseaseApi = {
     const res = await apiClient.get(`/diseases/${id}`);
     return res.data?.data;
   },
-  detect: async (data: { cropName?: string; symptoms?: string[]; notes?: string; imageUrl?: string }): Promise<DiagnosticResult> => {
-    const res = await apiClient.post('/diseases/detect', data);
+  detect: async (data: { cropName?: string; symptoms?: string[]; notes?: string; imageUrl?: string; imageBase64?: string; language?: string }): Promise<DiagnosticResult> => {
+    const res = await apiClient.post('/diseases/detect', data, { timeout: 60000 });
     return res.data?.data;
   },
 };
@@ -319,6 +321,145 @@ export const diagnosisCaseApi = {
     payload: ExpertReviewPayload
   ): Promise<DiagnosticCase> => {
     const res = await apiClient.post(`/diagnosis/cases/${caseId}/expert-review`, payload);
+    return res.data?.data;
+  },
+};
+
+export const mandiApi = {
+  getPrices: async (params?: {
+    commodity?: string;
+    state?: string;
+    district?: string;
+    market?: string;
+    variety?: string;
+    grade?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{
+    records: MandiPrice[];
+    provider: string;
+    governmentApiConnected: boolean;
+    isDemo: boolean;
+    disclaimer: string;
+    total: number;
+  }> => {
+    try {
+      const res = await apiClient.get('/mandi', { params });
+      const data = res.data?.data;
+      if (data && Array.isArray(data.records)) {
+        const normalized = data.records.map((r: any) => ({
+          ...r,
+          mandi: r.mandi || r.market || 'APMC Mandi',
+          market: r.market || r.mandi || 'APMC Mandi',
+          unit: r.unit || r.priceUnit || '₹/quintal',
+          changePercent: r.changePercent ?? r.priceChangePercent ?? 0,
+        }));
+        return {
+          records: normalized,
+          provider: data.provider || 'DEMO / MOCK',
+          governmentApiConnected: Boolean(data.governmentApiConnected),
+          isDemo: data.isDemo !== false,
+          disclaimer: data.disclaimer || 'Demo Data — Government API not connected',
+          total: data.total ?? normalized.length,
+        };
+      }
+      // Direct array fallback
+      if (Array.isArray(data)) {
+        const normalized = data.map((r: any) => ({
+          ...r,
+          mandi: r.mandi || r.market || 'APMC Mandi',
+          market: r.market || r.mandi || 'APMC Mandi',
+          unit: r.unit || r.priceUnit || '₹/quintal',
+          changePercent: r.changePercent ?? r.priceChangePercent ?? 0,
+        }));
+        return {
+          records: normalized,
+          provider: 'DEMO / MOCK',
+          governmentApiConnected: false,
+          isDemo: true,
+          disclaimer: 'Demo Data — Government API not connected',
+          total: normalized.length,
+        };
+      }
+      return {
+        records: [],
+        provider: 'DEMO / MOCK',
+        governmentApiConnected: false,
+        isDemo: true,
+        disclaimer: 'Demo Data — Government API not connected',
+        total: 0,
+      };
+    } catch {
+      return {
+        records: [],
+        provider: 'DEMO / MOCK',
+        governmentApiConnected: false,
+        isDemo: true,
+        disclaimer: 'Demo Data — Government API not connected',
+        total: 0,
+      };
+    }
+  },
+  getFilterOptions: async (): Promise<MandiFilterOptions | null> => {
+    try {
+      const res = await apiClient.get('/mandi/filter-options');
+      return res.data?.data || null;
+    } catch {
+      return null;
+    }
+  },
+  getTrends: async (commodity?: string) => {
+    const res = await apiClient.get('/mandi/trends', { params: { commodity } });
+    return res.data?.data || [];
+  },
+  getById: async (id: string): Promise<MandiPrice | null> => {
+    const res = await apiClient.get(`/mandi/${id}`);
+    const item = res.data?.data;
+    if (item) {
+      return {
+        ...item,
+        mandi: item.mandi || item.market || 'APMC Mandi',
+        market: item.market || item.mandi || 'APMC Mandi',
+        unit: item.unit || item.priceUnit || '₹/quintal',
+        changePercent: item.changePercent ?? item.priceChangePercent ?? 0,
+      };
+    }
+    return null;
+  },
+};
+
+export const schemeApi = {
+  getAll: async (params?: { category?: string; state?: string; search?: string }) => {
+    const res = await apiClient.get('/schemes', { params });
+    return res.data?.data || [];
+  },
+  getById: async (id: string) => {
+    const res = await apiClient.get(`/schemes/${id}`);
+    return res.data?.data;
+  },
+};
+
+export const dashboardApi = {
+  getFarmerStats: async (farmerId?: string) => {
+    const res = await apiClient.get('/dashboard/farmer', { params: { farmerId } });
+    return res.data?.data;
+  },
+  getOfficerStats: async () => {
+    const res = await apiClient.get('/dashboard/officer');
+    return res.data?.data;
+  },
+};
+
+export const assistantApi = {
+  query: async (payload: {
+    query: string;
+    language?: string;
+    farmContext?: any;
+    conversationHistory?: any[];
+    imageBase64?: string;
+  }) => {
+    const res = await apiClient.post('/assistant/query', payload);
     return res.data?.data;
   },
 };

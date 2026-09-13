@@ -15,6 +15,7 @@ export interface User {
   rating?: number;
   totalDeals?: number;
   verified?: boolean;
+  aadhaarLast4?: string;
   createdAt?: string;
 }
 
@@ -39,6 +40,7 @@ export interface RegisterData {
   password?: string;
   role?: UserRole;
   phone?: string;
+  aadhaarNumber?: string;
   state?: string;
   district?: string;
   village?: string;

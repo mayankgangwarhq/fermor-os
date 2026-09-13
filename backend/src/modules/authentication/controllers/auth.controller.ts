@@ -24,6 +24,26 @@ export class AuthController {
     }
   }
 
+  public static async sendAadhaarOtp(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { aadhaarNumber } = req.body;
+      const result = await AuthService.sendAadhaarDemoOtp(aadhaarNumber);
+      return sendSuccess(res, result, result.message);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async verifyAadhaarOtp(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { aadhaarNumber, otp } = req.body;
+      const result = await AuthService.verifyAadhaarDemoOtp(aadhaarNumber, otp);
+      return sendSuccess(res, result, 'Aadhaar demo login successful');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   public static async getMe(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       if (!req.user) {
@@ -36,3 +56,4 @@ export class AuthController {
     }
   }
 }
+

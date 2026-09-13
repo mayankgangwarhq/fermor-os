@@ -7,7 +7,10 @@ const router = Router();
 
 router.post('/register', validateRegister, AuthController.register);
 router.post('/login', validateLogin, AuthController.login);
+router.post('/aadhaar/send-otp', AuthController.sendAadhaarOtp);
+router.post('/aadhaar/verify-otp', AuthController.verifyAadhaarOtp);
 router.get('/me', authenticate, AuthController.getMe);
 
 export const authRoutes = router;
 export default router;
+

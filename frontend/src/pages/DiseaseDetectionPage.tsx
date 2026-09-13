@@ -114,7 +114,7 @@ export const DiseaseDetectionPage: React.FC = () => {
 
   // Primary State
   const [selectedCrop, setSelectedCrop] = useState<string>('Wheat');
-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(['Yellow pustules']);
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [customSymptomInput, setCustomSymptomInput] = useState<string>('');
   
   // Media State
@@ -143,7 +143,6 @@ export const DiseaseDetectionPage: React.FC = () => {
   const [isSubmittingClarification, setIsSubmittingClarification] = useState<boolean>(false);
   const [clarificationBoostMessage, setClarificationBoostMessage] = useState<string | null>(null);
   const [showAuditTrail, setShowAuditTrail] = useState<boolean>(false);
-  const [confidenceSimMode, setConfidenceSimMode] = useState<'AUTO' | 'HIGH' | 'MEDIUM' | 'LOW'>('AUTO');
 
   // SIH 26131 Integration Modals
   const [showLabModal, setShowLabModal] = useState<boolean>(false);
@@ -252,9 +251,19 @@ export const DiseaseDetectionPage: React.FC = () => {
 
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      clearPreviousScan();
       setSpecimenImage(dataUrl);
       stopCamera();
     }
+  };
+
+  // Clear previous scan state
+  const clearPreviousScan = () => {
+    setDiagnosticResult(null);
+    setActiveCase(null);
+    setClarificationAnswers({});
+    setClarificationBoostMessage(null);
+    setSentToExpert(false);
   };
 
   // Handle File Upload
@@ -265,6 +274,7 @@ export const DiseaseDetectionPage: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       const result = event.target?.result as string;
+      clearPreviousScan();
       setSpecimenImage(result);
       stopCamera();
     };
@@ -288,19 +298,20 @@ export const DiseaseDetectionPage: React.FC = () => {
     }
   };
 
-  // Apply Quick Preset
+  // Apply Quick Preset (Sample Only)
   const handleApplyPreset = (preset: typeof QUICK_PRESETS[0]) => {
+    clearPreviousScan();
     setSelectedCrop(preset.crop);
-    setSelectedSymptoms([preset.symptom]);
+    setSelectedSymptoms([]);
     setSpecimenImage(preset.image);
     stopCamera();
   };
 
   // Execute AI Diagnostic Pipeline
   const handleRunDiagnosis = async () => {
+    clearPreviousScan();
     setIsScanning(true);
     setScanStageIndex(0);
-    setDiagnosticResult(null);
 
     // Simulate animated scanning stages for premium AI SaaS feel
     const stageInterval = setInterval(() => {
@@ -313,11 +324,13 @@ export const DiseaseDetectionPage: React.FC = () => {
     }, 450);
 
     try {
-      // Real API Call
+      // Real API Call with real image payload
       const result = await diseaseApi.detect({
         cropName: selectedCrop,
-        symptoms: selectedSymptoms.length > 0 ? selectedSymptoms : ['Leaf spots or chlorosis'],
-        imageUrl: specimenImage || undefined,
+        symptoms: selectedSymptoms.length > 0 ? selectedSymptoms : undefined,
+        notes: customSymptomInput.trim() || undefined,
+        imageUrl: specimenImage && !specimenImage.startsWith('data:') ? specimenImage : undefined,
+        imageBase64: specimenImage && specimenImage.startsWith('data:') ? specimenImage : undefined,
       });
 
       clearInterval(stageInterval);
@@ -327,169 +340,48 @@ export const DiseaseDetectionPage: React.FC = () => {
       setTimeout(() => {
         completeDiagnosis(result);
       }, 400);
-    } catch (err) {
-      console.warn('[AI Scanner] Backend API fallback triggered:', err);
+    } catch (err: any) {
+      console.warn('[AI Scanner] Backend API error:', err);
       clearInterval(stageInterval);
 
-      // Intelligent Local Agronomic Fallback matching crop & symptoms
-      let fallbackIssue = 'Yellow Rust (Puccinia striiformis)';
-      let scientificName = 'Puccinia striiformis f. sp. tritici';
-      let fallbackSeverity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'HIGH';
-      let fallbackConfidence = 93;
-      let causes = ['Airborne fungal spores traveling from Himalayan foothills', 'High relative humidity (>85%) with cool temperatures (12-20°C)', 'Excess nitrogen fertilizer application'];
-      let organicProtocol = ['Spray 5% Neem Seed Kernel Extract (NSKE)', 'Trichoderma viride bio-fungicide foliar spray @ 5g/L'];
-      let chemicalProtocol = ['Spray Propiconazole 25% EC @ 1 ml/L of water', 'Spray Tebuconazole 25.9% EC @ 1.25 ml/L of water'];
-      let ipmAdvisory: IPMAdvisory = {
-        prevention: ['Plant resistant wheat varieties (HD-2967, DBW-187)', 'Avoid sowing past late November'],
-        cultural: ['Maintain balanced Potash and avoid excess split nitrogen/urea', 'Provide adequate field drainage'],
-        mechanical: ['Rogue and burn early infected foci plants along bunds'],
-        biological: ['Apply Trichoderma viride bio-agent @ 5g/L foliar spray', 'Conserve natural hyperparasitic fungi'],
-        chemical: ['Apply Propiconazole 25% EC @ 1ml/L ONLY if ETL exceeds 5% leaf area infection. Mandatory PPE.'],
-        monitoring: ['Inspect leaf undersides every 48 hours during humid, foggy spells'],
-        whatToDoNow: ['Isolate heavily infected leaf patches immediately', 'Spray organic bio-fungicide before 9:00 AM'],
-        whatToAvoid: ['Do NOT apply overhead sprinkler irrigation', 'Do NOT apply additional urea top dressing'],
-        whenToInspectAgain: '48 Hours (Check if yellow pustules turn dry/brown)',
-        whenToContactExpert: 'If yellow stripes spread to top flag leaf within 3 days',
-      };
-
-      if (selectedCrop === 'Tomato') {
-        fallbackIssue = 'Early Blight (Alternaria solani)';
-        scientificName = 'Alternaria solani (Ellis & Martin)';
-        fallbackSeverity = 'MEDIUM';
-        fallbackConfidence = 95;
-        causes = ['Soil-borne fungal residues splashing onto lower leaves', 'Warm humid weather (24-30°C) with wet foliage', 'Overhead sprinkler irrigation'];
-        organicProtocol = ['Copper Oxychloride organic formulation @ 2.5 g/L', 'Bacillus subtilis bio-fungicide foliar spray @ 3g/L'];
-        chemicalProtocol = ['Spray Mancozeb 75% WP @ 2.5 g/L of water', 'Spray Azoxystrobin 23% SC @ 1 ml/L of water'];
-        ipmAdvisory = {
-          prevention: ['Crop rotation with non-solanaceous crops for 2-3 years', 'Certified pathogen-free hybrid seeds'],
-          cultural: ['Mulch soil surface with straw to prevent rain-splash', 'Prune lower leaves up to 20cm above ground'],
-          mechanical: ['Stake plants vertically to ensure rapid drying of canopy'],
-          biological: ['Prophylactic foliar spray of Bacillus subtilis @ 3g/L', 'Neem oil 10,000 PPM @ 3ml/L'],
-          chemical: ['Spray Mancozeb 75% WP @ 2.5g/L if lesions reach 3rd tier of leaves.'],
-          monitoring: ['Scout lower leaves every 3 days for concentric target spots'],
-          whatToDoNow: ['Prune severely spotted lower leaves and bury them', 'Switch from sprinkler to drip irrigation'],
-          whatToAvoid: ['Do NOT work in wet fields to avoid spore transmission', 'Do NOT leave infected crop debris on field'],
-          whenToInspectAgain: '3 Days (Inspect new leaf flushes)',
-          whenToContactExpert: 'If collar rot lesions appear near stem ground line',
-        };
-      } else if (selectedCrop === 'Potato') {
-        fallbackIssue = 'Late Blight (Phytophthora infestans)';
-        scientificName = 'Phytophthora infestans (Mont.) de Bary';
-        fallbackSeverity = 'CRITICAL';
-        fallbackConfidence = 96;
-        causes = ['Cool humid microclimate (<18°C, RH >90%)', 'Persistent fog and cloud cover', 'Infected seed tubers'];
-        organicProtocol = ['Prophylactic bio-spray of Trichoderma harzianum @ 5g/L', 'Field sanitation and ridging soil over tubers'];
-        chemicalProtocol = ['Spray Cymoxanil + Mancozeb @ 2 g/L at early onset', 'Dimethomorph 50% WP @ 1 g/L in cold foggy spell'];
-        ipmAdvisory = {
-          prevention: ['Use certified blight-free seed tubers', 'High ridging to protect subterranean tubers from spore wash'],
-          cultural: ['Avoid flood irrigation during cold foggy periods', 'Destroy volunteer potato plants'],
-          mechanical: ['Dehaulming (cutting vines) 10-12 days before harvest'],
-          biological: ['Trichoderma harzianum bio-agent soil and foliar drenching @ 5g/L'],
-          chemical: ['Spray Cymoxanil + Mancozeb @ 2g/L at earliest sign of water-soaked lesions.'],
-          monitoring: ['Daily field scouting during foggy / high relative humidity periods'],
-          whatToDoNow: ['Apply prophylactic bio-fungicide immediately', 'Ensure field drainage channels are clear'],
-          whatToAvoid: ['Do NOT leave harvested tubers exposed to wet soil', 'Do NOT delay spray if fog persists'],
-          whenToInspectAgain: '24 Hours (Check for white downy fungal growth on leaf undersides)',
-          whenToContactExpert: 'Immediate extension alert if water-soaked lesions expand rapidly',
-        };
-      } else if (selectedCrop === 'Paddy') {
-        fallbackIssue = 'Rice Leaf Blast (Magnaporthe oryzae)';
-        scientificName = 'Magnaporthe oryzae (B.C. Couch)';
-        fallbackSeverity = 'HIGH';
-        fallbackConfidence = 92;
-        causes = ['Excessive nitrogen application', 'High humidity with night temperatures around 20-22°C', 'Dense crop canopy'];
-        organicProtocol = ['Pseudomonas fluorescens 0.2% seed & foliar treatment', 'Maintain standing water level to curb fungal sporulation'];
-        chemicalProtocol = ['Apply Tricyclazole 75% WP @ 0.6 g/L water', 'Spray Kasugamycin 3% SL @ 2 ml/L of water'];
-        ipmAdvisory = {
-          prevention: ['Treat seeds with Pseudomonas fluorescens @ 10g/kg', 'Use resistant cultivars'],
-          cultural: ['Split nitrogen application into 3-4 split doses', 'Maintain 2-3 cm standing water in paddy fields'],
-          mechanical: ['Burn or compost stubble of previous infected crop'],
-          biological: ['Foliar spray of Pseudomonas fluorescens bio-formulation @ 2.5g/L'],
-          chemical: ['Apply Tricyclazole 75% WP @ 0.6g/L only when spindle-shaped lesions exceed 5% canopy.'],
-          monitoring: ['Scout for spindle-shaped eye spots with ash-grey centers every 48 hours'],
-          whatToDoNow: ['Suspend nitrogen top dressing immediately', 'Ensure standing water in field'],
-          whatToAvoid: ['Do NOT apply excess urea', 'Do NOT allow field to dry out during tillering'],
-          whenToInspectAgain: '48 Hours',
-          whenToContactExpert: 'If neck blast or node blast symptoms are observed',
-        };
-      } else if (selectedCrop === 'Mustard') {
-        fallbackIssue = 'Alternaria Leaf Blight & Aphid Complex';
-        scientificName = 'Alternaria brassicae & Lipaphis erysimi';
-        fallbackSeverity = 'MEDIUM';
-        fallbackConfidence = 91;
-        causes = ['Overcast humid weather during flowering stage', 'High aphid vector pressure', 'Late sowing'];
-        organicProtocol = ['Spray 5% Neem oil (10,000 PPM) @ 3 ml/L', 'Destroy infected stubble post-harvest'];
-        chemicalProtocol = ['Spray Mancozeb 75% WP @ 2 g/L for blight', 'Thiamethoxam 25% WG @ 0.2 g/L for aphid control'];
-        ipmAdvisory = {
-          prevention: ['Early sowing in first fortnight of October to escape aphid surge', 'Certified seed treatment'],
-          cultural: ['Intercropping with barley or chickpea', 'Destroy wild cruciferous weeds'],
-          mechanical: ['Install yellow sticky traps @ 15 traps/acre for aphid monitoring'],
-          biological: ['Spray Neem Seed Kernel Extract (NSKE) 5% @ 50ml/L', 'Conserve ladybird beetles'],
-          chemical: ['Spray Mancozeb 75% WP @ 2g/L for blight or Thiamethoxam 25% WG @ 0.2g/L for aphids.'],
-          monitoring: ['Inspect central shoots and siliquae twice weekly'],
-          whatToDoNow: ['Install yellow sticky traps along field perimeter', 'Spray Neem formulation in evening'],
-          whatToAvoid: ['Do NOT spray insecticides during peak honeybee foraging hours (9 AM - 3 PM)'],
-          whenToInspectAgain: '3 Days',
-          whenToContactExpert: 'If aphid colonies cover more than 1.5 cm of apical shoot length',
-        };
-      } else if (selectedCrop === 'Cotton') {
-        fallbackIssue = 'Cotton Leaf Curl Virus (CLCuV)';
-        scientificName = 'Cotton Leaf Curl Multan Virus (CLCuMuV)';
-        fallbackSeverity = 'CRITICAL';
-        fallbackConfidence = 90;
-        causes = ['Whitefly (Bemisia tabaci) insect vector transmission', 'Susceptible non-resistant hybrids', 'Abundant weed hosts on bunds'];
-        organicProtocol = ['Install yellow sticky traps @ 15 traps/acre', 'Apply Neem formulation 1500 PPM @ 5 ml/L to check whitefly vector'];
-        chemicalProtocol = ['Spray Afidopyropen 50 g/L @ 2 ml/L of water', 'Spray Diafenthiuron 50% WP @ 1.2 g/L'];
-        ipmAdvisory = {
-          prevention: ['Sow CLCuV tolerant hybrid varieties', 'Eradicate alternate weed hosts (Kanghi booti, Peeli booti)'],
-          cultural: ['Maintain clean field sanitation and balanced potassium nutrition'],
-          mechanical: ['Install yellow sticky traps @ 15-20 traps/acre at canopy height'],
-          biological: ['Spray Neem oil (10,000 PPM) @ 3ml/L + detergent @ 0.5g/L to manage whitefly nymphs'],
-          chemical: ['Spray Diafenthiuron 50% WP @ 1.2g/L if whitefly count exceeds 8 adults/leaf.'],
-          monitoring: ['Monitor underside of top 3 leaves for whitefly counts every 3 days'],
-          whatToDoNow: ['Deploy yellow sticky traps immediately to trap adult whiteflies', 'Rogue out early infected virus plants'],
-          whatToAvoid: ['Do NOT apply synthetic pyrethroids which cause whitefly resurgence', 'Do NOT ignore border weeds'],
-          whenToInspectAgain: '48 Hours (Count whitefly count per leaf)',
-          whenToContactExpert: 'Immediate DAO/KVK notification if viral vein thickening exceeds 10% plot area',
+      let errorResult: DiagnosticResult;
+      if (err.response?.data?.data && typeof err.response.data.data === 'object') {
+        errorResult = err.response.data.data;
+      } else {
+        const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout');
+        errorResult = {
+          isMockDemo: false,
+          status: isTimeout ? 'vision_request_failed' : 'network_error',
+          cropName: selectedCrop,
+          suspectedIssue: isTimeout ? 'Vision Processing Request Timed Out' : 'Network Connection Error',
+          confidenceScore: 0,
+          riskLevel: 'LOW',
+          observedSymptoms: [],
+          visualEvidence: ['No visual symptoms available because image analysis was not completed.'],
+          generalExplanation: isTimeout
+            ? 'The vision model took longer than expected to process the image. Please click Retry.'
+            : 'Could not connect to the backend server. Please verify backend is running on port 5000.',
+          analysisNote: 'Image analysis could not be completed.',
+          preventiveSuggestions: [
+            'Inspect foliage manually for discoloration or chewing damage.',
+            'Consult your local Krishi Vigyan Kendra (KVK) or extension officer.',
+          ],
+          recommendedTreatments: { organic: [], chemical: [] },
+          nextSteps: ['Click Retry to re-scan.', 'Upload another clear leaf photo.'],
+          sourceStatus: isTimeout ? 'TIMEOUT ERROR' : 'NETWORK ERROR',
         };
       }
 
-      const fallbackResult: DiagnosticResult = {
-        isMockDemo: true,
-        cropName: selectedCrop,
-        suspectedIssue: fallbackIssue,
-        scientificName,
-        confidenceScore: fallbackConfidence,
-        riskLevel: fallbackSeverity,
-        observedSymptoms: selectedSymptoms.length > 0 ? selectedSymptoms : ['Discolored lesions on foliage'],
-        possibleCauses: causes,
-        generalExplanation: `Agronomic computer vision matched spore morphology and symptoms consistent with ${fallbackIssue} (${scientificName}).`,
-        preventiveSuggestions: ipmAdvisory.prevention,
-        ipmAdvisory,
-        recommendedTreatments: {
-          organic: organicProtocol,
-          chemical: chemicalProtocol,
-        },
-        nextSteps: ipmAdvisory.whatToDoNow,
-        sourceStatus: 'LIVE AGRONOMIC ENGINE (ONLINE)',
-        requiresLabVerification: fallbackConfidence < 75 || fallbackSeverity === 'CRITICAL',
-      };
-
       setTimeout(() => {
-        completeDiagnosis(fallbackResult);
+        completeDiagnosis(errorResult);
       }, 400);
     }
   };
 
-  const completeDiagnosis = async (res: DiagnosticResult, simTier?: 'HIGH' | 'MEDIUM' | 'LOW') => {
+  const completeDiagnosis = async (res: DiagnosticResult) => {
     setIsScanning(false);
     
-    // Apply simulation override if selected
-    let effectiveConfidence = res.confidenceScore;
-    const mode = simTier || (confidenceSimMode === 'AUTO' ? undefined : confidenceSimMode);
-    if (mode === 'HIGH') effectiveConfidence = 93;
-    else if (mode === 'MEDIUM') effectiveConfidence = 62;
-    else if (mode === 'LOW') effectiveConfidence = 38;
+    const effectiveConfidence = res.confidenceScore;
 
     const modifiedRes: DiagnosticResult = {
       ...res,
@@ -503,91 +395,91 @@ export const DiseaseDetectionPage: React.FC = () => {
     setClarificationBoostMessage(null);
     setSentToExpert(false);
 
-    // Call Backend Case API or build in-memory case
-    try {
-      const caseRes = await diagnosisCaseApi.createCase({
+    if (modifiedRes.status === 'success') {
+      // Call Backend Case API or build in-memory case
+      try {
+        const caseRes = await diagnosisCaseApi.createCase({
+          cropName: modifiedRes.cropName,
+          initialSymptoms: modifiedRes.observedSymptoms,
+          initialConfidence: modifiedRes.confidenceScore,
+          topPrediction: modifiedRes.suspectedIssue,
+          scientificName: modifiedRes.scientificName,
+          imageUrl: specimenImage || undefined,
+          riskLevel: modifiedRes.riskLevel || 'HIGH',
+          ipmAdvisory: modifiedRes.ipmAdvisory,
+        });
+        setActiveCase(caseRes);
+      } catch (err) {
+        console.warn('Backend DiagnosticCase API fallback:', err);
+        const evalResult = ClientConfidenceEngine.evaluate(
+          modifiedRes.confidenceScore,
+          modifiedRes.cropName,
+          modifiedRes.suspectedIssue,
+          modifiedRes.observedSymptoms
+        );
+        const fallbackCase: DiagnosticCase = {
+          id: 'CASE-' + Math.floor(100000 + Math.random() * 900000),
+          caseNumber: 'CASE-' + Math.floor(100000 + Math.random() * 900000),
+          cropName: modifiedRes.cropName,
+          initialSymptoms: modifiedRes.observedSymptoms,
+          imageUrl: specimenImage || undefined,
+          topPrediction: modifiedRes.suspectedIssue,
+          scientificName: modifiedRes.scientificName,
+          confidenceScore: modifiedRes.confidenceScore,
+          confidenceTier: evalResult.tier,
+          decisionStatus: evalResult.decisionStatus,
+          clarificationQuestions: evalResult.clarificationQuestions || [],
+          clarificationAnswers: {},
+          auditTrail: [
+            {
+              action: 'INITIAL_AI_SCAN',
+              timestamp: new Date().toISOString(),
+              performedBy: 'AGRINEXT Computer Vision AI Engine',
+              details: `Specimen image processed for ${modifiedRes.cropName}. Top hypothesis: ${modifiedRes.suspectedIssue} (${modifiedRes.confidenceScore}% raw score).`,
+            },
+            {
+              action: 'CONFIDENCE_EVALUATED',
+              timestamp: new Date().toISOString(),
+              performedBy: 'AGRINEXT Confidence Engine',
+              details: `Assigned to ${evalResult.tier} tier (${modifiedRes.confidenceScore}%). Gate Decision: ${evalResult.decisionStatus}.`,
+            },
+          ],
+          expertStatus: evalResult.tier === 'LOW_CONFIDENCE' ? 'PENDING' : 'NONE',
+          riskLevel: modifiedRes.riskLevel || 'HIGH',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        setActiveCase(fallbackCase);
+      }
+
+      // Sync to backend ScanCases API for official telemetry
+      sihApi.createScanCase({
         cropName: modifiedRes.cropName,
-        initialSymptoms: modifiedRes.observedSymptoms,
-        initialConfidence: modifiedRes.confidenceScore,
-        topPrediction: modifiedRes.suspectedIssue,
-        scientificName: modifiedRes.scientificName,
-        imageUrl: specimenImage || undefined,
-        riskLevel: modifiedRes.riskLevel || 'HIGH',
-        ipmAdvisory: modifiedRes.ipmAdvisory,
-      });
-      setActiveCase(caseRes);
-    } catch (err) {
-      console.warn('Backend DiagnosticCase API fallback:', err);
-      const evalResult = ClientConfidenceEngine.evaluate(
-        modifiedRes.confidenceScore,
-        modifiedRes.cropName,
-        modifiedRes.suspectedIssue,
-        modifiedRes.observedSymptoms
-      );
-      const fallbackCase: DiagnosticCase = {
-        id: 'CASE-' + Math.floor(100000 + Math.random() * 900000),
-        caseNumber: 'CASE-' + Math.floor(100000 + Math.random() * 900000),
-        cropName: modifiedRes.cropName,
-        initialSymptoms: modifiedRes.observedSymptoms,
-        imageUrl: specimenImage || undefined,
-        topPrediction: modifiedRes.suspectedIssue,
-        scientificName: modifiedRes.scientificName,
+        suspectedIssue: modifiedRes.suspectedIssue,
         confidenceScore: modifiedRes.confidenceScore,
-        confidenceTier: evalResult.tier,
-        decisionStatus: evalResult.decisionStatus,
-        clarificationQuestions: evalResult.clarificationQuestions || [],
-        clarificationAnswers: {},
-        auditTrail: [
-          {
-            action: 'INITIAL_AI_SCAN',
-            timestamp: new Date().toISOString(),
-            performedBy: 'AGRINEXT Computer Vision AI Engine',
-            details: `Specimen image processed for ${modifiedRes.cropName}. Top hypothesis: ${modifiedRes.suspectedIssue} (${modifiedRes.confidenceScore}% raw score).`,
-          },
-          {
-            action: 'CONFIDENCE_EVALUATED',
-            timestamp: new Date().toISOString(),
-            performedBy: 'AGRINEXT Confidence Engine',
-            details: `Assigned to ${evalResult.tier} tier (${modifiedRes.confidenceScore}%). Gate Decision: ${evalResult.decisionStatus}.`,
-          },
-        ],
-        expertStatus: evalResult.tier === 'LOW_CONFIDENCE' ? 'PENDING' : 'NONE',
         riskLevel: modifiedRes.riskLevel || 'HIGH',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        symptoms: modifiedRes.observedSymptoms,
+        imageUrl: specimenImage || undefined,
+        ipmAdvisory: modifiedRes.ipmAdvisory,
+      }).catch((e) => console.warn(e));
+
+      // Save to persistent history
+      const newItem: ScanHistoryItem = {
+        id: 'scan-' + Date.now(),
+        timestamp: now,
+        cropName: modifiedRes.cropName,
+        suspectedIssue: modifiedRes.suspectedIssue,
+        confidenceScore: modifiedRes.confidenceScore,
+        riskLevel: modifiedRes.riskLevel || 'LOW',
+        imageUrl: specimenImage || undefined,
+        result: modifiedRes,
       };
-      setActiveCase(fallbackCase);
-    }
-
-    // Sync to backend ScanCases API for official telemetry
-    sihApi.createScanCase({
-      cropName: modifiedRes.cropName,
-      suspectedIssue: modifiedRes.suspectedIssue,
-      confidenceScore: modifiedRes.confidenceScore,
-      riskLevel: modifiedRes.riskLevel || 'HIGH',
-      symptoms: modifiedRes.observedSymptoms,
-      imageUrl: specimenImage || undefined,
-      ipmAdvisory: modifiedRes.ipmAdvisory,
-    }).catch((e) => console.warn(e));
-
-    // Save to persistent history
-    const newItem: ScanHistoryItem = {
-      id: 'scan-' + Date.now(),
-      timestamp: now,
-      cropName: modifiedRes.cropName,
-      suspectedIssue: modifiedRes.suspectedIssue,
-      confidenceScore: modifiedRes.confidenceScore,
-      riskLevel: modifiedRes.riskLevel || 'HIGH',
-      imageUrl: specimenImage || undefined,
-      result: modifiedRes,
-    };
-
-    const updated = [newItem, ...historyItems.slice(0, 19)];
-    setHistoryItems(updated);
-    try {
-      localStorage.setItem('agrinext_scan_history', JSON.stringify(updated));
-    } catch (e) {
-      console.warn('Could not save scan history:', e);
+      setHistoryItems((prev) => [newItem, ...prev.slice(0, 19)]);
+      try {
+        localStorage.setItem('agrinext_scan_history', JSON.stringify([newItem, ...historyItems.slice(0, 19)]));
+      } catch (e) {
+        console.warn('LocalStorage save failed', e);
+      }
     }
 
     // Smooth scroll down to result
@@ -723,14 +615,14 @@ export const DiseaseDetectionPage: React.FC = () => {
   const getSeverityBadge = (level: string = 'MEDIUM') => {
     switch (level.toUpperCase()) {
       case 'CRITICAL':
-        return { bg: '#fee2e2', color: '#dc2626', border: '#fca5a5', label: 'CRITICAL ALERT' };
+        return { bg: '#fee2e2', color: '#dc2626', border: '#fca5a5', label: t('statusCritical', 'CRITICAL') };
       case 'HIGH':
-        return { bg: '#ffedd5', color: '#c2410c', border: '#fdba74', label: 'HIGH RISK' };
+        return { bg: '#ffedd5', color: '#c2410c', border: '#fdba74', label: t('statusHighRisk', 'HIGH RISK') };
       case 'MEDIUM':
-        return { bg: '#fef9c3', color: '#a16207', border: '#fde047', label: 'MODERATE' };
+        return { bg: '#fef9c3', color: '#a16207', border: '#fde047', label: t('statusModerateRisk', 'MODERATE') };
       case 'LOW':
       default:
-        return { bg: '#dcfce7', color: '#15803d', border: '#86efac', label: 'LOW RISK' };
+        return { bg: '#dcfce7', color: '#15803d', border: '#86efac', label: t('statusLowRisk', 'LOW RISK') };
     }
   };
 
@@ -950,7 +842,7 @@ export const DiseaseDetectionPage: React.FC = () => {
             </div>
 
             <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', backgroundColor: '#ecfdf5', padding: '3px 10px', borderRadius: '999px' }}>
-              STEP 1 OF 2
+              {t('step1Of2', 'STEP 1 OF 2')}
             </span>
           </div>
 
@@ -1108,7 +1000,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                           }}
                         >
                           <RotateCcw size={13} />
-                          <span>Retake Photo</span>
+                          <span>{t('retakePhoto', 'Retake Photo')}</span>
                         </button>
                       </div>
                     )}
@@ -1348,7 +1240,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                           cursor: 'pointer',
                         }}
                       >
-                        Change Photo
+                        {t('changePhoto', 'Change Photo')}
                       </button>
                     </div>
                   </div>
@@ -1407,7 +1299,7 @@ export const DiseaseDetectionPage: React.FC = () => {
           {/* Quick Demo Test Presets */}
           <div>
             <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
-              ⚡ Quick Test Presets (Instant Sample):
+              ⚡ {t('quickTestPresets', 'Quick Test Presets')} ({t('sampleLabel', 'SAMPLE')}):
             </span>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               {QUICK_PRESETS.map((pr, i) => (
@@ -1556,7 +1448,7 @@ export const DiseaseDetectionPage: React.FC = () => {
 
             {diagnosticResult && (
               <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#166534', backgroundColor: '#dcfce7', padding: '3px 10px', borderRadius: '999px' }}>
-                COMPLETED
+                {t('statusCompleted', 'COMPLETED')}
               </span>
             )}
           </div>
@@ -1641,16 +1533,39 @@ export const DiseaseDetectionPage: React.FC = () => {
           ) : diagnosticResult ? (
             /* COMPLETED DIAGNOSIS RESULT CARD */
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {diagnosticResult.status === 'success' ? (
+                <>
+                  {/* Case C: Crop Mismatch Warning */}
+                  {diagnosticResult.detectedCrop?.matchedUserSelection === false && (
+                    <div
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        backgroundColor: '#eff6ff',
+                        border: '1px solid #93c5fd',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                      }}
+                    >
+                      <Info size={18} color="#2563eb" />
+                      <div style={{ fontSize: '0.84rem', color: '#1e40af' }}>
+                        <strong>{t('cropMismatch', 'Crop Visual Mismatch:')}</strong> Selected <em>{selectedCrop}</em>, but Vision AI detected visual markers of <strong>{diagnosticResult.cropName}</strong>. Advisory below is generated for {diagnosticResult.cropName}.
+                      </div>
+                    </div>
+                  )}
+
               {/* Top Identified Disease Card Banner */}
               {(() => {
                 const sBadge = getSeverityBadge(diagnosticResult.riskLevel);
+                const isHealthy = diagnosticResult.diagnosisType === 'healthy' || diagnosticResult.suspectedIssue.toLowerCase().includes('healthy');
                 return (
                   <div
                     style={{
                       padding: '22px',
                       borderRadius: '16px',
-                      backgroundColor: sBadge.bg,
-                      border: `1.5px solid ${sBadge.border}`,
+                      backgroundColor: isHealthy ? '#ecfdf5' : sBadge.bg,
+                      border: `1.5px solid ${isHealthy ? '#a7f3d0' : sBadge.border}`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -1666,15 +1581,18 @@ export const DiseaseDetectionPage: React.FC = () => {
                             fontWeight: 800,
                             padding: '3px 10px',
                             borderRadius: '999px',
-                            backgroundColor: sBadge.color,
+                            backgroundColor: isHealthy ? '#059669' : sBadge.color,
                             color: '#ffffff',
                             letterSpacing: '0.05em',
                           }}
                         >
-                          {sBadge.label}
+                          {isHealthy ? t('statusHealthy', 'HEALTHY') : sBadge.label}
                         </span>
-                        <span style={{ fontSize: '0.84rem', fontWeight: 700, color: sBadge.color }}>
-                          Host Crop: <strong>{diagnosticResult.cropName}</strong>
+                        <span style={{ fontSize: '0.84rem', fontWeight: 700, color: isHealthy ? '#065f46' : sBadge.color }}>
+                          {t('hostCropLabel', 'Host Crop:')} <strong>{diagnosticResult.cropName}</strong>
+                        </span>
+                        <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                          ({diagnosticResult.sourceStatus})
                         </span>
                       </div>
 
@@ -1684,12 +1602,12 @@ export const DiseaseDetectionPage: React.FC = () => {
 
                       {diagnosticResult.scientificName && (
                         <div style={{ fontSize: '0.82rem', fontStyle: 'italic', color: '#475569', marginTop: '2px' }}>
-                          Pathogen: {diagnosticResult.scientificName}
+                          {t('pathogenLabel', 'Pathogen:')} {diagnosticResult.scientificName}
                         </div>
                       )}
 
                       <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
-                        Scan timestamp: {scanTimestamp}
+                        {t('scanTimestampLabel', 'Scan timestamp:')} {scanTimestamp}
                       </div>
                     </div>
 
@@ -1700,7 +1618,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                         backgroundColor: '#ffffff',
                         padding: '14px 20px',
                         borderRadius: '14px',
-                        border: `1px solid ${sBadge.border}`,
+                        border: `1px solid ${isHealthy ? '#a7f3d0' : sBadge.border}`,
                         boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
                       }}
                     >
@@ -1708,7 +1626,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                         {diagnosticResult.confidenceScore}%
                       </div>
                       <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-                        Confidence Index
+                        {t('confidenceIndexLabel', 'Confidence Index')}
                       </span>
                     </div>
                   </div>
@@ -1754,7 +1672,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '0.78rem', fontWeight: 800, color: isHighConfidence ? '#166534' : isMediumConfidence ? '#854d0e' : '#991b1b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                              AGRINEXT CONFIDENCE DECISION GATE
+                              {t('decisionGateTitle', 'AGRINEXT CONFIDENCE DECISION GATE')}
                             </span>
                             <span
                               style={{
@@ -1767,70 +1685,17 @@ export const DiseaseDetectionPage: React.FC = () => {
                                 border: `1px solid ${isHighConfidence ? '#bbf7d0' : isMediumConfidence ? '#fde68a' : '#fecaca'}`,
                               }}
                             >
-                              {isHighConfidence ? 'TIER 1: HIGH (≥75%)' : isMediumConfidence ? 'TIER 2: MEDIUM (45-74%)' : 'TIER 3: LOW (<45%)'}
+                              {isHighConfidence ? t('tier1High', 'TIER 1: HIGH (≥75%)') : isMediumConfidence ? t('tier2Medium', 'TIER 2: MEDIUM (45-74%)') : t('tier3Low', 'TIER 3: LOW (<45%)')}
                             </span>
                           </div>
                           <h4 style={{ margin: '2px 0 0 0', fontSize: '1.05rem', fontWeight: 900, color: 'var(--slate-900)' }}>
                             {isHighConfidence
-                              ? 'Pathological Visual Markers Confirmed (Automated IPM Active)'
+                              ? t('markerConfirmed', 'Pathological Visual Markers Confirmed (Automated IPM Active)')
                               : isMediumConfidence
-                              ? 'Dynamic Symptom Clarification Needed'
-                              : 'AI Confidence Insufficient for Automated Recommendation'}
+                              ? t('clarificationNeeded', 'Dynamic Symptom Clarification Needed')
+                              : t('confidenceInsufficient', 'AI Confidence Insufficient for Automated Recommendation')}
                           </h4>
                         </div>
-                      </div>
-
-                      {/* Interactive Simulation Switch for SIH Review */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#ffffff', padding: '4px 8px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b' }}>Simulate:</span>
-                        <button
-                          type="button"
-                          onClick={() => completeDiagnosis(diagnosticResult, 'HIGH')}
-                          style={{
-                            padding: '3px 8px',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            borderRadius: '6px',
-                            border: 'none',
-                            backgroundColor: isHighConfidence ? '#dcfce7' : '#f1f5f9',
-                            color: isHighConfidence ? '#15803d' : '#64748b',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          High (93%)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => completeDiagnosis(diagnosticResult, 'MEDIUM')}
-                          style={{
-                            padding: '3px 8px',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            borderRadius: '6px',
-                            border: 'none',
-                            backgroundColor: isMediumConfidence ? '#fef3c7' : '#f1f5f9',
-                            color: isMediumConfidence ? '#b45309' : '#64748b',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Med (62%)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => completeDiagnosis(diagnosticResult, 'LOW')}
-                          style={{
-                            padding: '3px 8px',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            borderRadius: '6px',
-                            border: 'none',
-                            backgroundColor: isLowConfidence ? '#fee2e2' : '#f1f5f9',
-                            color: isLowConfidence ? '#dc2626' : '#64748b',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Low (38%)
-                        </button>
                       </div>
                     </div>
 
@@ -1898,7 +1763,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                           }}
                         >
                           <Award size={14} />
-                          <span>{sentToExpert ? '✓ Agronomist Verification Enrolled' : 'Request Agronomist 2nd Opinion'}</span>
+                          <span>{sentToExpert ? t('agronomistEnrolled', '✓ Agronomist Verification Enrolled') : t('requestAgronomist2ndOpinion', 'Request Agronomist 2nd Opinion')}</span>
                         </button>
                       </div>
                     )}
@@ -1908,7 +1773,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <div style={{ fontSize: '0.84rem', color: '#78350f', lineHeight: 1.4 }}>
                           AGRINEXT detected <strong>{diagnosticResult.suspectedIssue}</strong> at <strong>{confScore}% confidence</strong>. 
-                          Please confirm the following visual observations to boost confidence or verify with an agronomist:
+                          {t('clarificationIntro', 'Please confirm the following visual observations to boost confidence or verify with an agronomist:')}
                         </div>
 
                         {/* Clarification Questions */}
@@ -1978,7 +1843,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                           >
                             <Sparkles size={15} color="#fef08a" />
                             <span>
-                              {isSubmittingClarification ? 'Refining Confidence...' : 'Submit Answers & Refine Confidence'}
+                              {isSubmittingClarification ? t('refiningConfidence', 'Refining Confidence...') : t('submitClarifications', 'Submit Answers & Refine Confidence')}
                             </span>
                           </button>
 
@@ -1992,7 +1857,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                             style={{ padding: '10px 14px', fontSize: '0.84rem', fontWeight: 700 }}
                           >
                             <Camera size={14} />
-                            <span>Upload Clearer Photo Angle</span>
+                            <span>{t('uploadClearerAngle', 'Upload Clearer Photo Angle')}</span>
                           </button>
 
                           <button
@@ -2003,7 +1868,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                             style={{ padding: '10px 14px', fontSize: '0.84rem', fontWeight: 700, borderColor: '#d97706', color: '#b45309' }}
                           >
                             <Send size={14} />
-                            <span>{sentToExpert ? '✓ Forwarded to Agronomist' : 'Forward to Agronomist Review'}</span>
+                            <span>{sentToExpert ? t('forwardedToAgronomist', '✓ Forwarded to Agronomist') : t('forwardToAgronomist', 'Forward to Agronomist Review')}</span>
                           </button>
                         </div>
                       </div>
@@ -2026,12 +1891,11 @@ export const DiseaseDetectionPage: React.FC = () => {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <AlertTriangle size={20} color="#dc2626" />
                             <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#991b1b' }}>
-                              Automated Chemical Advisory Restricted to Prevent Crop Damage
+                              {t('chemicalRestrictedWarning', 'Automated Chemical Advisory Restricted to Prevent Crop Damage')}
                             </span>
                           </div>
                           <p style={{ margin: 0, fontSize: '0.82rem', color: '#7f1d1d', lineHeight: 1.45 }}>
-                            AI confidence score (<strong>{confScore}%</strong>) is insufficient for safe automated pesticide spraying. 
-                            To avoid wrong chemical usage and financial loss, this diagnostic specimen is automatically queued for district agronomist verification.
+                            {t('chemicalRestrictedDesc', 'AI confidence score is insufficient for safe automated pesticide spraying. To avoid wrong chemical usage and financial loss, this diagnostic specimen is automatically queued for district agronomist verification.')}
                           </p>
                         </div>
 
@@ -2055,14 +1919,14 @@ export const DiseaseDetectionPage: React.FC = () => {
                                 #{activeCase?.caseNumber || 'CASE-1003'}
                               </span>
                               <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', backgroundColor: '#fef3c7', color: '#b45309' }}>
-                                ⏳ PENDING AGRONOMIST VERIFICATION
+                                {t('pendingAgronomistVerification', '⏳ PENDING AGRONOMIST VERIFICATION')}
                               </span>
                             </div>
                             <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
-                              Enrolled in District Agronomist Review Queue (KVK Link)
+                              {t('enrolledInDistrictReview', 'Enrolled in District Agronomist Review Queue (KVK Link)')}
                             </div>
                             <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
-                              Estimated response window: &lt; 2 Hours • Assigned to Crop Pathology Extension Officer
+                              {t('estimatedResponseWindow', 'Estimated response window: < 2 Hours • Assigned to Crop Pathology Extension Officer')}
                             </div>
                           </div>
 
@@ -2074,7 +1938,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                               style={{ padding: '8px 14px', fontSize: '0.8rem', backgroundColor: '#dc2626', borderColor: '#dc2626' }}
                             >
                               <Building2 size={14} />
-                              <span>Refer to KVK Lab</span>
+                              <span>{t('referToKvkLab', 'Refer to KVK Lab')}</span>
                             </button>
                             <button
                               type="button"
@@ -2086,7 +1950,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                               style={{ padding: '8px 14px', fontSize: '0.8rem' }}
                             >
                               <RotateCcw size={14} />
-                              <span>Retake Photo</span>
+                              <span>{t('retakePhoto', 'Retake Photo')}</span>
                             </button>
                           </div>
                         </div>
@@ -2113,7 +1977,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                       >
                         <Clock size={13} />
                         <span>
-                          {showAuditTrail ? '▼ Hide Diagnostic Decision Audit Trail' : '▶ View Decision Audit Trail (' + (activeCase?.auditTrail?.length || 2) + ' events)'}
+                          {showAuditTrail ? t('hideAuditTrail', '▼ Hide Diagnostic Decision Audit Trail') : t('viewAuditTrail', '▶ View Decision Audit Trail') + ' (' + (activeCase?.auditTrail?.length || 2) + ')'}
                         </span>
                       </button>
 
@@ -2156,7 +2020,7 @@ export const DiseaseDetectionPage: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
                 <div style={{ padding: '14px', borderRadius: '12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                   <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', textTransform: 'uppercase' }}>
-                    🔍 Symptoms Detected on Foliage:
+                    {t('symptomsDetectedTitle', '🔍 Symptoms Detected on Foliage:')}
                   </span>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
                     {diagnosticResult.observedSymptoms.map((sym, idx) => (
@@ -2181,7 +2045,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                 {diagnosticResult.possibleCauses && (
                   <div style={{ padding: '14px', borderRadius: '12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                     <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', textTransform: 'uppercase' }}>
-                      ☁️ Environmental / Pathological Drivers:
+                      {t('environmentalDriversTitle', '☁️ Environmental / Pathological Drivers:')}
                     </span>
                     <ul style={{ paddingLeft: '16px', margin: '8px 0 0 0', fontSize: '0.8rem', color: '#475569', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {diagnosticResult.possibleCauses.map((cause, idx) => (
@@ -2198,11 +2062,11 @@ export const DiseaseDetectionPage: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Leaf size={20} color="#059669" />
                     <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#064e3b', margin: 0 }}>
-                      Integrated Pest & Disease Management (IPM) Advisory
+                      {t('ipmAdvisoryTitle', 'Integrated Pest & Disease Management (IPM) Advisory')}
                     </h3>
                   </div>
                   <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '3px 8px', borderRadius: '999px', backgroundColor: '#dcfce7', color: '#15803d' }}>
-                    SAFE INPUT HIERARCHY
+                    {t('safeInputHierarchy', 'SAFE INPUT HIERARCHY')}
                   </span>
                 </div>
 
@@ -2211,7 +2075,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   {/* Pillar 1: Prevention */}
                   <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase' }}>
-                      1. Prevention
+                      {t('ipmPillar1', '1. Prevention')}
                     </span>
                     <ul style={{ paddingLeft: '16px', margin: '6px 0 0 0', fontSize: '0.78rem', color: '#14532d', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       {(diagnosticResult.ipmAdvisory?.prevention || diagnosticResult.preventiveSuggestions || []).slice(0, 2).map((item, i) => (
@@ -2223,7 +2087,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   {/* Pillar 2: Cultural */}
                   <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase' }}>
-                      2. Cultural Practices
+                      {t('ipmPillar2', '2. Cultural Practices')}
                     </span>
                     <ul style={{ paddingLeft: '16px', margin: '6px 0 0 0', fontSize: '0.78rem', color: '#14532d', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       {(diagnosticResult.ipmAdvisory?.cultural || ['Provide optimal row spacing', 'Balanced nitrogen-potash nutrition']).map((item, i) => (
@@ -2235,7 +2099,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   {/* Pillar 3: Mechanical */}
                   <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase' }}>
-                      3. Mechanical / Traps
+                      {t('ipmPillar3', '3. Mechanical / Traps')}
                     </span>
                     <ul style={{ paddingLeft: '16px', margin: '6px 0 0 0', fontSize: '0.78rem', color: '#14532d', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       {(diagnosticResult.ipmAdvisory?.mechanical || ['Install sticky/pheromone traps @ 15/acre', 'Rogue out infected foci']).map((item, i) => (
@@ -2247,7 +2111,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   {/* Pillar 4: Biological */}
                   <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase' }}>
-                      4. Biological Bio-Control
+                      {t('ipmPillar4', '4. Biological Bio-Control')}
                     </span>
                     <ul style={{ paddingLeft: '16px', margin: '6px 0 0 0', fontSize: '0.78rem', color: '#14532d', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       {(diagnosticResult.recommendedTreatments?.organic || ['Trichoderma viride 5g/L foliar spray']).map((item, i) => (
@@ -2259,7 +2123,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   {/* Pillar 5: Threshold Chemical */}
                   <div style={{ backgroundColor: '#eff6ff', padding: '12px', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase' }}>
-                      5. Chemical (Threshold Gated)
+                      {t('ipmPillar5', '5. Chemical (Threshold Gated)')}
                     </span>
                     <ul style={{ paddingLeft: '16px', margin: '6px 0 0 0', fontSize: '0.78rem', color: '#1e3a8a', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       {(diagnosticResult.recommendedTreatments?.chemical || ['Only apply if ETL > 5% leaf damage']).map((item, i) => (
@@ -2271,7 +2135,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   {/* Pillar 6: Monitoring */}
                   <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase' }}>
-                      6. Monitoring & ETL
+                      {t('ipmPillar6', '6. Monitoring & ETL')}
                     </span>
                     <ul style={{ paddingLeft: '16px', margin: '6px 0 0 0', fontSize: '0.78rem', color: '#14532d', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       {(diagnosticResult.ipmAdvisory?.monitoring || ['Scout canopy twice weekly']).map((item, i) => (
@@ -2288,7 +2152,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   {/* What to do today */}
                   <div style={{ padding: '14px', borderRadius: '12px', backgroundColor: '#f0fdf4', border: '1px solid #86efac' }}>
                     <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
-                      ✅ What to do immediately:
+                      {t('whatToDoImmediately', '✅ What to do immediately:')}
                     </span>
                     <ul style={{ paddingLeft: '16px', margin: 0, fontSize: '0.8rem', color: '#14532d', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {diagnosticResult.ipmAdvisory.whatToDoNow.map((step, i) => (
@@ -2300,7 +2164,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   {/* What to avoid */}
                   <div style={{ padding: '14px', borderRadius: '12px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5' }}>
                     <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#991b1b', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
-                      🚫 What NOT to do (Avoid):
+                      {t('whatNotToDo', '🚫 What NOT to do (Avoid):')}
                     </span>
                     <ul style={{ paddingLeft: '16px', margin: 0, fontSize: '0.8rem', color: '#7f1d1d', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {diagnosticResult.ipmAdvisory.whatToAvoid.map((step, i) => (
@@ -2312,7 +2176,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   {/* When to inspect next */}
                   <div style={{ padding: '14px', borderRadius: '12px', backgroundColor: '#eff6ff', border: '1px solid #93c5fd' }}>
                     <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                      ⏱️ Next Field Inspection:
+                      {t('nextFieldInspection', '⏱️ Next Field Inspection:')}
                     </span>
                     <div style={{ fontSize: '0.85rem', color: '#1e3a8a', fontWeight: 700 }}>
                       {diagnosticResult.ipmAdvisory.whenToInspectAgain}
@@ -2322,7 +2186,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   {/* When to contact expert */}
                   <div style={{ padding: '14px', borderRadius: '12px', backgroundColor: '#fffbeb', border: '1px solid #fde047' }}>
                     <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#854d0e', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                      👨‍🔬 Escalate to Agronomist:
+                      {t('escalateToAgronomist', '👨‍🔬 Escalate to Agronomist:')}
                     </span>
                     <div style={{ fontSize: '0.85rem', color: '#713f12', fontWeight: 700 }}>
                       {diagnosticResult.ipmAdvisory.whenToContactExpert}
@@ -2369,7 +2233,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   }}
                 >
                   <Send size={15} />
-                  <span>{sentToExpert ? '✓ Sent to Expert' : 'Send to Expert'}</span>
+                  <span>{sentToExpert ? t('sentToExpert', '✓ Sent to Expert') : t('sendToExpert', 'Send to Expert')}</span>
                 </button>
 
                 {/* Start Follow-up Monitoring Button */}
@@ -2397,7 +2261,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   }}
                 >
                   <Calendar size={15} />
-                  <span>Start Follow-up (Day 0/3/7)</span>
+                  <span>{t('startFollowUpDays', 'Start Follow-up (Day 0/3/7)')}</span>
                 </button>
 
                 {/* Refer to KVK Lab */}
@@ -2408,7 +2272,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   style={{ padding: '11px 16px', fontSize: '0.85rem', fontWeight: 800 }}
                 >
                   <Building2 size={15} />
-                  <span>Refer to Lab</span>
+                  <span>{t('referToLab', 'Refer to Lab')}</span>
                 </button>
 
                 {/* Print Report */}
@@ -2420,7 +2284,7 @@ export const DiseaseDetectionPage: React.FC = () => {
                   title="Print Advisory"
                 >
                   <Printer size={15} />
-                  <span>Print</span>
+                  <span>{t('printReport', 'Print')}</span>
                 </button>
 
                 {/* New Scan */}
@@ -2436,9 +2300,212 @@ export const DiseaseDetectionPage: React.FC = () => {
                   style={{ padding: '11px 14px', fontSize: '0.85rem' }}
                 >
                   <RefreshCw size={14} />
-                  <span>New Scan</span>
+                  <span>{t('newScan', 'New Scan')}</span>
                 </button>
               </div>
+
+                </>
+              ) : (
+                /* NON-SUCCESS ERROR / GUIDANCE STATES */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Case A: Invalid Image / Non-Plant */}
+                  {diagnosticResult.status === 'invalid_image' && (
+                    <div
+                      style={{
+                        padding: '24px',
+                        borderRadius: '16px',
+                        backgroundColor: '#fef2f2',
+                        border: '1.5px solid #f87171',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '14px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#dc2626', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <AlertTriangle size={22} />
+                        </div>
+                        <div>
+                          <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#991b1b' }}>
+                            {t('invalidImageTitle', 'Invalid Image / Non-Plant Detected')}
+                          </h3>
+                          <div style={{ fontSize: '0.75rem', color: '#b91c1c' }}>{t('invalidImageSubtitle', 'Image rejected by Vision AI classifier')}</div>
+                        </div>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.88rem', color: '#7f1d1d', lineHeight: 1.5 }}>
+                        {diagnosticResult.generalExplanation || t('invalidImageDefault', 'The uploaded photo does not contain a recognizable agricultural plant, leaf, or crop specimen.')}
+                      </p>
+                      <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                        <button
+                          type="button"
+                          onClick={() => { setDiagnosticResult(null); fileInputRef.current?.click(); }}
+                          className="btn btn-primary"
+                          style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                        >
+                          {t('uploadPlantPhoto', '📁 Upload Plant Photo')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setDiagnosticResult(null); startCamera(); }}
+                          className="btn btn-secondary"
+                          style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                        >
+                          {t('openCamera', '📷 Open Camera')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Case B: Low Quality Image */}
+                  {diagnosticResult.status === 'low_quality' && (
+                    <div
+                      style={{
+                        padding: '20px',
+                        borderRadius: '16px',
+                        backgroundColor: '#fffbeb',
+                        border: '1.5px solid #facc15',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <AlertTriangle size={22} color="#d97706" />
+                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: '#92400e' }}>
+                          {t('lowQualityTitle', 'Image Resolution or Quality Insufficient')}
+                        </h3>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#78350f', lineHeight: 1.5 }}>
+                        {diagnosticResult.generalExplanation || t('lowQualityDefault', 'Photo is blurry or lighting is insufficient to accurately identify disease morphology.')}
+                      </p>
+                      <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                        <button
+                          type="button"
+                          onClick={() => { setDiagnosticResult(null); if (activeTab === 'camera') startCamera(); else fileInputRef.current?.click(); }}
+                          className="btn btn-secondary"
+                          style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                        >
+                          {t('retakeClearerPhoto', '📸 Retake Clearer Photo')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setDiagnosticResult(null); fileInputRef.current?.click(); }}
+                          className="btn btn-outline"
+                          style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                        >
+                          {t('uploadHigherRes', '📁 Upload Higher Resolution Photo')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Case C: Missing API Key */}
+                  {diagnosticResult.status === 'missing_api_key' && (
+                    <div
+                      style={{
+                        padding: '24px',
+                        borderRadius: '16px',
+                        backgroundColor: '#fffbeb',
+                        border: '1.5px solid #f59e0b',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <AlertTriangle size={24} color="#d97706" />
+                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#92400e' }}>
+                          {t('missingApiKeyTitle', 'Gemini Vision API Key Not Configured')}
+                        </h3>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.88rem', color: '#78350f', lineHeight: 1.5 }}>
+                        {diagnosticResult.generalExplanation || t('missingApiKeyDefault', 'The server does not have a valid GEMINI_API_KEY environment variable configured.')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Case D: Vision Request Failed / Network / Model Response / Unavailable */}
+                  {(diagnosticResult.status === 'vision_request_failed' ||
+                    diagnosticResult.status === 'analysis_unavailable' ||
+                    diagnosticResult.status === 'model_response_invalid' ||
+                    diagnosticResult.status === 'network_error' ||
+                    !['invalid_image', 'low_quality', 'missing_api_key'].includes(diagnosticResult.status as string)) && (
+                    <div
+                      style={{
+                        padding: '24px',
+                        borderRadius: '16px',
+                        backgroundColor: '#fef2f2',
+                        border: '1.5px solid #fca5a5',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <ShieldAlert size={24} color="#dc2626" />
+                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#991b1b' }}>
+                          {t('serviceUnavailableTitle', 'AI Vision Service Temporarily Unavailable')}
+                        </h3>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.88rem', color: '#7f1d1d', lineHeight: 1.5 }}>
+                        {diagnosticResult.generalExplanation || t('serviceUnavailableDefault', 'AI image analysis could not be completed. Please check your network and retry.')}
+                      </p>
+                      <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={handleRunDiagnosis}
+                          className="btn btn-primary"
+                          style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                        >
+                          {t('retryAnalysis', '🔄 Retry Analysis')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setDiagnosticResult(null); fileInputRef.current?.click(); }}
+                          className="btn btn-secondary"
+                          style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                        >
+                          {t('uploadAnotherPhoto', '📁 Upload Another Photo')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Clear Empty Symptoms Notice */}
+                  <div
+                    style={{
+                      padding: '16px 20px',
+                      borderRadius: '12px',
+                      backgroundColor: '#f8fafc',
+                      border: '1px dashed #cbd5e1',
+                      color: '#64748b',
+                      fontSize: '0.85rem',
+                      fontStyle: 'italic',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {t('noVisualSymptoms', 'No visual symptoms available because image analysis was not completed.')}
+                  </div>
+
+                  {/* Action Reset Button */}
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDiagnosticResult(null);
+                        setSpecimenImage(null);
+                        setSentToExpert(false);
+                        startCamera();
+                      }}
+                      className="btn btn-outline"
+                      style={{ padding: '10px 18px', fontSize: '0.85rem' }}
+                    >
+                      <RefreshCw size={14} />
+                      <span>{t('startFreshScan', 'Start Fresh Scan')}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Lab Referral Modal Instance */}
               {showLabReferralModal && (

@@ -24,6 +24,10 @@ export const RegisterPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
+  const [stateName, setStateName] = useState('Madhya Pradesh');
+  const [district, setDistrict] = useState('Indore');
+  const [village, setVillage] = useState('Sanwer');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -58,8 +62,28 @@ export const RegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+
+    if (aadhaarNumber.trim()) {
+      const cleanAadhaar = aadhaarNumber.replace(/\D/g, '');
+      if (cleanAadhaar.length !== 12) {
+        setErrorMsg('Aadhaar number must be exactly 12 digits');
+        return;
+      }
+    }
+
     try {
-      await register(name, email, password, activeRole, phone);
+      await register({
+        name,
+        email,
+        password,
+        role: activeRole,
+        phone,
+        aadhaarNumber: aadhaarNumber.replace(/\D/g, '') || undefined,
+        state: stateName,
+        district,
+        village,
+      });
+
       if (fromLocation && typeof fromLocation === 'string' && fromLocation.startsWith('/')) {
         navigate(fromLocation, { replace: true });
       } else {
@@ -103,7 +127,7 @@ export const RegisterPage: React.FC = () => {
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
-            {t('signup', 'Sign Up')} — {getRoleDisplayName()}
+            {t('signup', 'Create Account')} — {getRoleDisplayName()}
           </h2>
           <div
             style={{
@@ -139,6 +163,7 @@ export const RegisterPage: React.FC = () => {
             color: '#dc2626',
             fontSize: '0.85rem',
             marginBottom: '16px',
+            fontWeight: 600,
           }}
         >
           {errorMsg}
@@ -176,18 +201,66 @@ export const RegisterPage: React.FC = () => {
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-            {t('mobileNumber', 'Phone / Mobile')}
-          </label>
-          <input
-            type="tel"
-            className="input-field"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+91 98765 43210"
-            style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
-          />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+              {t('mobileNumber', 'Mobile Number')} *
+            </label>
+            <input
+              type="tel"
+              className="input-field"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+91 98765 43210"
+              required
+              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+              Aadhaar Number (12-digit)
+            </label>
+            <input
+              type="text"
+              className="input-field"
+              value={aadhaarNumber}
+              maxLength={14}
+              onChange={(e) => setAadhaarNumber(e.target.value)}
+              placeholder="XXXX XXXX 1234"
+              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+              State
+            </label>
+            <input
+              type="text"
+              className="input-field"
+              value={stateName}
+              onChange={(e) => setStateName(e.target.value)}
+              placeholder="State"
+              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+              District
+            </label>
+            <input
+              type="text"
+              className="input-field"
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+              placeholder="District"
+              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+            />
+          </div>
         </div>
 
         <div>
@@ -240,3 +313,4 @@ export const RegisterPage: React.FC = () => {
 };
 
 export default RegisterPage;
+

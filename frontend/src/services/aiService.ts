@@ -1,3 +1,4 @@
+import { assistantApi } from './api';
 import { Language, AIStructuredResponse, AIDiseaseCardPayload, AIWeatherCardPayload, AIFollowUpCardPayload, AIHotspotCardPayload } from '../types';
 
 export { type AIStructuredResponse };
@@ -5,8 +6,25 @@ export { type AIStructuredResponse };
 export const queryAgrinextAI = async (
   query: string,
   language: Language = 'en',
-  farmContext?: { farmName?: string; cropName?: string; plotName?: string; location?: string }
+  farmContext?: { farmName?: string; cropName?: string; plotName?: string; location?: string },
+  conversationHistory?: Array<{ role: 'user' | 'model'; content: string }>,
+  imageBase64?: string
 ): Promise<AIStructuredResponse> => {
+  try {
+    const response = await assistantApi.query({
+      query,
+      language,
+      farmContext,
+      conversationHistory,
+      imageBase64,
+    });
+    if (response && response.information) {
+      return response;
+    }
+  } catch (err) {
+    console.warn('[AI Service] Backend assistant query fallback:', err);
+  }
+
   const q = query.toLowerCase();
   const crop = farmContext?.cropName || 'Wheat';
   const farm = farmContext?.farmName || 'Sanganer Farm';

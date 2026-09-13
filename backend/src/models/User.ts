@@ -57,6 +57,21 @@ const UserSchema = new Schema<IUserDocument>(
       type: String,
       default: '',
     },
+    authMethod: {
+      type: String,
+      enum: ['email', 'aadhaar_demo'],
+      default: 'email',
+    },
+    aadhaarHash: {
+      type: String,
+      default: null,
+      index: true,
+      sparse: true,
+    },
+    aadhaarLast4: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

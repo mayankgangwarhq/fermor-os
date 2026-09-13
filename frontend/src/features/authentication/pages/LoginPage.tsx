@@ -11,19 +11,22 @@ import {
   Award,
   ShoppingBag,
   ShieldCheck,
-  KeyRound,
   Eye,
   EyeOff,
   Mail,
   Lock,
   RefreshCw,
   AlertCircle,
+  CreditCard,
+  KeyRound,
+  CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
 import type { UserRole } from '../types';
 
 export const LoginPage: React.FC = () => {
   const { role: urlRole } = useParams<{ role?: string }>();
-  const { login, isLoading } = useAuth();
+  const { login, sendAadhaarOtp, loginWithAadhaarOtp, isLoading } = useAuth();
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,24 +40,35 @@ export const LoginPage: React.FC = () => {
       : 'farmer'
   ) as UserRole;
 
+  // Auth Mode: 'email' or 'aadhaar'
+  const [authMode, setAuthMode] = useState<'email' | 'aadhaar'>('email');
+
+  // Email form state
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [showForgotModal, setShowForgotModal] = useState(false);
-  const [forgotInput, setForgotInput] = useState('');
-  const [forgotSuccess, setForgotSuccess] = useState(false);
 
-  // Default credentials for quick test/demo
+  // Aadhaar Demo state
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
+  const [aadhaarStep, setAadhaarStep] = useState<'input' | 'otp'>('input');
+  const [otp, setOtp] = useState('');
+  const [demoOtpHint, setDemoOtpHint] = useState('1234');
+  const [aadhaarLast4, setAadhaarLast4] = useState('');
+
+  // Status & Errors
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // Default credentials for quick demo convenience
   useEffect(() => {
     if (activeRole === 'farmer') {
-      setEmailOrPhone('farmer@farmer-os.agri');
+      setEmailOrPhone('farmer@agrinext.agri');
       setPassword('farmer123');
     } else if (activeRole === 'expert') {
-      setEmailOrPhone('expert@farmer-os.agri');
+      setEmailOrPhone('expert@agrinext.agri');
       setPassword('expert123');
     } else if (activeRole === 'buyer') {
-      setEmailOrPhone('buyer@farmer-os.agri');
+      setEmailOrPhone('buyer@agrinext.agri');
       setPassword('buyer123');
     }
   }, [activeRole]);
@@ -87,9 +101,25 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const redirectAfterLogin = () => {
+    if (fromLocation && typeof fromLocation === 'string' && fromLocation.startsWith('/')) {
+      navigate(fromLocation, { replace: true });
+    } else {
+      if (activeRole === 'expert') {
+        navigate('/expert/dashboard', { replace: true });
+      } else if (activeRole === 'buyer') {
+        navigate('/buyer/dashboard', { replace: true });
+      } else {
+        navigate('/farmer/dashboard', { replace: true });
+      }
+    }
+  };
+
+  // 1. Handle Email / Password Login
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
 
     if (!emailOrPhone.trim()) {
       setErrorMsg(t('enterEmailOrPhone', 'Please enter your email or mobile number.'));
@@ -101,32 +131,54 @@ export const LoginPage: React.FC = () => {
     }
 
     try {
-      await login(emailOrPhone, password, activeRole);
-      if (fromLocation && typeof fromLocation === 'string' && fromLocation.startsWith('/')) {
-        navigate(fromLocation, { replace: true });
-      } else {
-        if (activeRole === 'expert') {
-          navigate('/expert/dashboard', { replace: true });
-        } else if (activeRole === 'buyer') {
-          navigate('/buyer/dashboard', { replace: true });
-        } else {
-          navigate('/farmer/dashboard', { replace: true });
-        }
-      }
+      await login(emailOrPhone.trim(), password, activeRole);
+      redirectAfterLogin();
     } catch (err: any) {
-      setErrorMsg(err.message || t('invalidCredentials', 'Invalid email or password.'));
+      setErrorMsg(err.message || 'Invalid email or password');
     }
   };
 
-  const handleForgotSubmit = (e: React.FormEvent) => {
+  // 2. Handle Aadhaar Step 1: Send OTP
+  const handleSendAadhaarOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!forgotInput.trim()) return;
-    setForgotSuccess(true);
-    setTimeout(() => {
-      setShowForgotModal(false);
-      setForgotSuccess(false);
-      setForgotInput('');
-    }, 2500);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    const clean = aadhaarNumber.replace(/\D/g, '');
+    if (clean.length !== 12) {
+      setErrorMsg('Please enter a valid 12-digit Aadhaar number.');
+      return;
+    }
+
+    try {
+      const res = await sendAadhaarOtp(clean);
+      setDemoOtpHint(res.demoOtp || '1234');
+      setAadhaarLast4(res.aadhaarLast4 || clean.slice(-4));
+      setAadhaarStep('otp');
+      setSuccessMsg('Demo OTP sent successfully!');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Could not verify Aadhaar number.');
+    }
+  };
+
+  // 3. Handle Aadhaar Step 2: Verify OTP
+  const handleVerifyAadhaarOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    const clean = aadhaarNumber.replace(/\D/g, '');
+    if (!otp.trim()) {
+      setErrorMsg('Please enter the 4-digit OTP.');
+      return;
+    }
+
+    try {
+      await loginWithAadhaarOtp(clean, otp.trim());
+      redirectAfterLogin();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Invalid OTP');
+    }
   };
 
   return (
@@ -196,7 +248,7 @@ export const LoginPage: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '20px',
+          marginBottom: '18px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -241,7 +293,76 @@ export const LoginPage: React.FC = () => {
         </button>
       </div>
 
-      {/* 4. ELEGANT INLINE ERROR STATE */}
+      {/* 4. AUTH METHOD TABS: EMAIL vs AADHAAR DEMO */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '8px',
+          backgroundColor: '#f1f5f9',
+          padding: '4px',
+          borderRadius: '12px',
+          marginBottom: '20px',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            setAuthMode('email');
+            setErrorMsg('');
+            setSuccessMsg('');
+          }}
+          style={{
+            padding: '9px 12px',
+            borderRadius: '9px',
+            border: 'none',
+            fontSize: '0.85rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            backgroundColor: authMode === 'email' ? '#ffffff' : 'transparent',
+            color: authMode === 'email' ? '#0f172a' : '#64748b',
+            boxShadow: authMode === 'email' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <Mail size={15} color={authMode === 'email' ? '#059669' : '#64748b'} />
+          <span>Email Login</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setAuthMode('aadhaar');
+            setErrorMsg('');
+            setSuccessMsg('');
+          }}
+          style={{
+            padding: '9px 12px',
+            borderRadius: '9px',
+            border: 'none',
+            fontSize: '0.85rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            backgroundColor: authMode === 'aadhaar' ? '#ffffff' : 'transparent',
+            color: authMode === 'aadhaar' ? '#0f172a' : '#64748b',
+            boxShadow: authMode === 'aadhaar' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <CreditCard size={15} color={authMode === 'aadhaar' ? '#059669' : '#64748b'} />
+          <span>Aadhaar Demo</span>
+        </button>
+      </div>
+
+      {/* 5. INLINE ERROR & SUCCESS NOTIFICATIONS */}
       {errorMsg && (
         <div
           style={{
@@ -263,183 +384,296 @@ export const LoginPage: React.FC = () => {
         </div>
       )}
 
-      {/* 5. LOGIN INPUT FORM */}
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {/* Field 1: Email / Mobile */}
-        <div>
-          <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-            {t('emailAddress', 'Email Address')} / {t('mobileNumber', 'Mobile Number')}
-          </label>
-          <div style={{ position: 'relative' }}>
-            <Mail size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-            <input
-              type="text"
-              className="input-field"
-              value={emailOrPhone}
-              onChange={(e) => setEmailOrPhone(e.target.value)}
-              placeholder={activeRole === 'expert' ? 'expert@agrinext.agri' : activeRole === 'buyer' ? 'buyer@agrinext.agri' : 'farmer@agrinext.agri'}
-              required
-              style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.9rem', outline: 'none' }}
-            />
-          </div>
-        </div>
-
-        {/* Field 2: Password with Show/Hide Toggle */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155' }}>
-              {t('password', 'Password')}
-            </label>
-            <button
-              type="button"
-              onClick={() => setShowForgotModal(true)}
-              style={{ border: 'none', background: 'transparent', fontSize: '0.78rem', color: '#059669', fontWeight: 700, cursor: 'pointer' }}
-            >
-              {t('forgotPassword', 'Forgot password?')}
-            </button>
-          </div>
-
-          <div style={{ position: 'relative' }}>
-            <Lock size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-            <input
-              type={showPassword ? 'text' : 'password'}
-              className="input-field"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              style={{ width: '100%', padding: '10px 42px 10px 38px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.9rem', outline: 'none' }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              style={{
-                position: 'absolute',
-                right: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                border: 'none',
-                background: 'transparent',
-                cursor: 'pointer',
-                color: '#94a3b8',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-              title={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-        </div>
-
-        {/* Primary CTA Button */}
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={isLoading}
+      {successMsg && (
+        <div
           style={{
-            width: '100%',
-            padding: '12px',
+            padding: '12px 14px',
+            backgroundColor: '#ecfdf5',
+            border: '1px solid #a7f3d0',
             borderRadius: '10px',
-            fontSize: '0.95rem',
-            fontWeight: 800,
+            color: '#065f46',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            marginBottom: '18px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
             gap: '8px',
-            marginTop: '6px',
-            boxShadow: '0 4px 14px rgba(5, 150, 105, 0.3)',
           }}
         >
-          {isLoading ? (
-            <>
-              <RefreshCw size={18} className="spin-icon" />
-              <span>{t('signIn', 'Signing in...')}</span>
-            </>
-          ) : (
-            <>
-              <LogIn size={18} />
-              <span>{t('signIn', 'Sign In')}</span>
-              <ArrowRight size={16} />
-            </>
-          )}
-        </button>
-      </form>
+          <CheckCircle2 size={18} color="#059669" style={{ flexShrink: 0 }} />
+          <span>{successMsg}</span>
+        </div>
+      )}
 
-      {/* 6. DYNAMIC REGISTER SECTION */}
+      {/* 6. FORM OPTION A: EMAIL & PASSWORD LOGIN */}
+      {authMode === 'email' && (
+        <form onSubmit={handleEmailSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+              {t('emailAddress', 'Email Address')} / {t('mobileNumber', 'Mobile Number')}
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Mail size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+              <input
+                type="text"
+                className="input-field"
+                value={emailOrPhone}
+                onChange={(e) => setEmailOrPhone(e.target.value)}
+                placeholder={activeRole === 'expert' ? 'expert@agrinext.agri' : activeRole === 'buyer' ? 'buyer@agrinext.agri' : 'farmer@agrinext.agri'}
+                required
+                style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.9rem', outline: 'none' }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+              {t('password', 'Password')}
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Lock size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="input-field"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                style={{ width: '100%', padding: '10px 42px 10px 38px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.9rem', outline: 'none' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  color: '#94a3b8',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isLoading}
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: '10px',
+              fontSize: '0.95rem',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              marginTop: '6px',
+              boxShadow: '0 4px 14px rgba(5, 150, 105, 0.3)',
+            }}
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw size={18} className="spin-icon" />
+                <span>{t('signIn', 'Signing in...')}</span>
+              </>
+            ) : (
+              <>
+                <LogIn size={18} />
+                <span>{t('signIn', 'Sign In with Password')}</span>
+                <ArrowRight size={16} />
+              </>
+            )}
+          </button>
+        </form>
+      )}
+
+      {/* 7. FORM OPTION B: AADHAAR DEMO OTP LOGIN */}
+      {authMode === 'aadhaar' && (
+        <div>
+          {aadhaarStep === 'input' ? (
+            <form onSubmit={handleSendAadhaarOtp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Aadhaar Number (12-Digit)
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <CreditCard size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={aadhaarNumber}
+                    onChange={(e) => setAadhaarNumber(e.target.value)}
+                    placeholder="e.g. 5555 6666 7777"
+                    maxLength={14}
+                    required
+                    style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.9rem', outline: 'none' }}
+                  />
+                </div>
+                <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '6px' }}>
+                  🔒 Demo mode uses SHA-256 hashed identifiers. Full Aadhaar is never stored or logged.
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isLoading}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '10px',
+                  fontSize: '0.95rem',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  marginTop: '4px',
+                  boxShadow: '0 4px 14px rgba(5, 150, 105, 0.3)',
+                }}
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw size={18} className="spin-icon" />
+                    <span>Verifying Aadhaar...</span>
+                  </>
+                ) : (
+                  <>
+                    <KeyRound size={18} />
+                    <span>Send Demo OTP</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyAadhaarOtp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Development Mode OTP Banner */}
+              <div
+                style={{
+                  padding: '12px 14px',
+                  backgroundColor: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '10px',
+                  color: '#1e40af',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800 }}>
+                  <Sparkles size={16} color="#2563eb" />
+                  <span>Demo OTP: {demoOtpHint}</span>
+                </div>
+                <div style={{ fontSize: '0.76rem', color: '#3b82f6' }}>
+                  (This is a simulated hackathon/development authorization flow.)
+                </div>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155' }}>
+                    Enter 4-Digit OTP
+                  </label>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    Aadhaar: •••• {aadhaarLast4}
+                  </span>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <KeyRound size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    placeholder="1234"
+                    maxLength={6}
+                    required
+                    style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '1.1rem', letterSpacing: '4px', fontWeight: 800, outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isLoading}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '10px',
+                  fontSize: '0.95rem',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  marginTop: '4px',
+                  boxShadow: '0 4px 14px rgba(5, 150, 105, 0.3)',
+                }}
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw size={18} className="spin-icon" />
+                    <span>Verifying OTP...</span>
+                  </>
+                ) : (
+                  <>
+                    <LogIn size={18} />
+                    <span>Verify OTP & Sign In</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
+
+              <div style={{ textAlign: 'center', marginTop: '4px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAadhaarStep('input');
+                    setOtp('');
+                    setErrorMsg('');
+                    setSuccessMsg('');
+                  }}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    color: '#059669',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  ← Change Aadhaar number
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
+
+      {/* 8. REGISTER FOOTER */}
       <div style={{ marginTop: '22px', textAlign: 'center', fontSize: '0.85rem', color: '#64748b' }}>
         {t('noAccount', "Don't have an account?")}{' '}
         <Link to={`/register/${activeRole}`} state={location.state} style={{ color: '#059669', fontWeight: 800, textDecoration: 'none' }}>
           {t('signup', 'Register as')} {getRoleDisplayName()}
         </Link>
       </div>
-
-      {/* FORGOT PASSWORD MODAL */}
-      {showForgotModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.6)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-            padding: '16px',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '16px',
-              maxWidth: '420px',
-              width: '100%',
-              padding: '24px',
-              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <KeyRound size={20} color="#059669" />
-              </div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                {t('forgotPassword', 'Reset Password')}
-              </h3>
-            </div>
-
-            {forgotSuccess ? (
-              <div style={{ padding: '12px', backgroundColor: '#ecfdf5', borderRadius: '8px', color: '#065f46', fontSize: '0.85rem', fontWeight: 700 }}>
-                ✓ {t('resetSent', 'Password reset link sent to your registered address!')}
-              </div>
-            ) : (
-              <form onSubmit={handleForgotSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0 }}>
-                  {t('enterEmailOrPhone', 'Enter your registered email or mobile number:')}
-                </p>
-                <input
-                  type="text"
-                  required
-                  placeholder="name@domain.com or mobile"
-                  value={forgotInput}
-                  onChange={(e) => setForgotInput(e.target.value)}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
-                />
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowForgotModal(false)} style={{ padding: '8px 14px', fontSize: '0.82rem' }}>
-                    {t('cancel', 'Cancel')}
-                  </button>
-                  <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.82rem' }}>
-                    {t('submit', 'Send Reset Link')}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
     </AuthLayout>
   );
 };
 
 export default LoginPage;
+

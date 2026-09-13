@@ -221,17 +221,43 @@ export interface MandiPrice {
   id: string;
   commodity: string;
   variety: string;
+  grade?: string;
   state: string;
   district: string;
+  market?: string;
   mandi: string;
   minPrice: number;
   maxPrice: number;
   modalPrice: number;
   unit: string;
+  priceUnit?: string;
   date: string;
   trend: 'up' | 'down' | 'stable';
   changePercent: number;
+  priceChangePercent?: number;
+  arrivalTonnes?: number;
   sourceStatus: 'LIVE DATA' | 'DEMO DATA';
+  isDemo?: boolean;
+  notes?: string;
+}
+
+export interface MandiApiResponse {
+  success: boolean;
+  provider: 'DEMO / MOCK' | 'DATA_GOV_IN';
+  governmentApiConnected: boolean;
+  isDemo: boolean;
+  disclaimer: string;
+  total: number;
+  records: MandiPrice[];
+}
+
+export interface MandiFilterOptions {
+  states: string[];
+  districts: Record<string, string[]>;
+  markets: Record<string, string[]>;
+  commodities: string[];
+  varieties: Record<string, string[]>;
+  grades: string[];
 }
 
 export type ListingStatus = 'active' | 'interested' | 'sold' | 'expired';
@@ -413,21 +439,63 @@ export interface AIHotspotCardPayload {
 
 export interface AIActionButton {
   label: string;
-  action: 'navigate' | 'scan' | 'upload_followup' | 'expert' | 'weather' | 'custom';
+  action: 'navigate' | 'scan' | 'upload_followup' | 'expert' | 'weather' | 'custom' | 'schemes' | 'external';
   target?: string;
   payload?: any;
+}
+
+export interface AIPestCardPayload {
+  pestName: string;
+  scientificName?: string;
+  cropName: string;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  etlStatus?: string;
+  symptoms?: string[];
+  management?: string[];
+  organicControl?: string[];
+}
+
+export interface AIMandiCardPayload {
+  commodity: string;
+  variety?: string;
+  market: string;
+  district?: string;
+  state?: string;
+  modalPrice: number;
+  minPrice: number;
+  maxPrice: number;
+  priceUnit: string;
+  trend?: 'up' | 'down' | 'stable';
+  date?: string;
+}
+
+export interface AISchemeCardPayload {
+  title: string;
+  titleHi?: string;
+  sponsor: string;
+  benefitSummary: string;
+  maxFinancialAssistance?: string;
+  subsidyPercentage?: number;
+  eligibilityCriteria?: string[];
+  documentsRequired?: string[];
+  applicationUrl?: string;
+  applicationDeadline?: string;
 }
 
 export interface AIStructuredResponse {
   understanding: string;
   information: string;
   nextSteps: string[];
-  sourceStatus: 'LIVE API' | 'VERIFIED DB' | 'AI GUIDANCE' | 'DEMO DATA';
+  sourceStatus: 'LIVE API' | 'VERIFIED DB' | 'AI GUIDANCE' | 'DEMO DATA' | 'LIVE GEMINI API' | 'VERIFIED GOVT DB';
   diseaseCard?: AIDiseaseCardPayload;
+  pestCard?: AIPestCardPayload;
   weatherCard?: AIWeatherCardPayload;
+  mandiCard?: AIMandiCardPayload;
+  schemeCard?: AISchemeCardPayload;
   followUpCard?: AIFollowUpCardPayload;
   hotspotCard?: AIHotspotCardPayload;
   actionButtons?: AIActionButton[];
+  sources?: Array<{ name: string; url?: string; lastUpdated?: string }>;
 }
 
 export interface AIChatMessage {
@@ -437,6 +505,15 @@ export interface AIChatMessage {
   structuredResponse?: AIStructuredResponse;
   image?: string;
   timestamp: string;
+  isError?: boolean;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  messages: AIChatMessage[];
 }
 
 export interface IPMAdvisory {
@@ -452,16 +529,52 @@ export interface IPMAdvisory {
   whenToContactExpert: string;
 }
 
+export type VisionAnalysisStatus =
+  | 'success'
+  | 'uncertain'
+  | 'low_quality'
+  | 'invalid_image'
+  | 'missing_api_key'
+  | 'vision_request_failed'
+  | 'model_response_invalid'
+  | 'network_error'
+  | 'analysis_unavailable';
+
+export type DiagnosticType = 'disease' | 'pest' | 'healthy' | 'unknown';
+
 export interface DiagnosticResult {
   isMockDemo?: boolean;
+  status?: VisionAnalysisStatus;
+  diagnosisType?: DiagnosticType;
+
+  // Standard structured response contract
+  success?: boolean;
+  isPlant?: boolean;
+  crop?: string;
+  disease?: string;
+  pathogen?: string;
+  confidence?: number;
+  severity?: string;
+  symptoms?: string[];
+  recommendations?: string[];
+  reasoning?: string;
+
   cropName: string;
+  detectedCrop?: {
+    name: string;
+    confidence: number;
+    matchedUserSelection: boolean;
+    note?: string;
+  };
   suspectedIssue: string;
   scientificName?: string;
   confidenceScore: number;
   riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   observedSymptoms: string[];
+  visualEvidence?: string[];
   possibleCauses?: string[];
   generalExplanation: string;
+  analysisNote?: string;
   preventiveSuggestions: string[];
   recommendedNextSteps?: string[];
   ipmAdvisory?: IPMAdvisory;
@@ -472,6 +585,8 @@ export interface DiagnosticResult {
   nextSteps?: string[];
   sourceStatus: string;
   requiresLabVerification?: boolean;
+  needsExpertReview?: boolean;
+  timestamp?: string;
 }
 
 export interface IHotspot {
