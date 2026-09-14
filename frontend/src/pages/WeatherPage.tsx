@@ -219,31 +219,79 @@ export const WeatherPage: React.FC = () => {
         } else if (res && res.sourceStatus === 'UNAVAILABLE') {
           setWeatherData(res);
         } else {
-          const fallback = await fetchWeatherForLocation({
-            ...farmLoc,
-            latitude: params.lat,
-            longitude: params.lon,
+          setWeatherData({
+            temperature: 0,
+            condition: 'Weather data temporarily unavailable',
+            weatherCode: -1,
+            humidity: 0,
+            windSpeed: 0,
+            rainProbability: 0,
+            precipitation: 0,
+            location: params.locationName,
             district: params.district,
             state: params.state,
-            formattedAddress: `${params.locationName}, ${params.district}, ${params.state}`,
+            forecast: [],
+            alerts: [
+              {
+                id: 'w-unavailable',
+                type: 'disease',
+                severity: 'warning',
+                title: 'Weather Service Notice',
+                description: `The Open-Meteo meteorological feed is temporarily unreachable for ${params.locationName}, ${params.district}.`,
+                actionableStep: 'Please check your connection or retry in a few moments.',
+              },
+            ],
+            source: 'Open-Meteo Weather API',
+            sourceStatus: 'UNAVAILABLE',
+            lastUpdated: new Date().toISOString(),
+            errorMessage: 'Weather data temporarily unavailable',
           });
-          setWeatherData(fallback);
         }
-      } catch {
-        const fallback = await fetchWeatherForLocation({
-          ...farmLoc,
-          latitude: params.lat,
-          longitude: params.lon,
+      } catch (error: any) {
+        console.error('[Weather] REQUEST FAILED:', error);
+        console.error('[Weather] STATUS:', error?.response?.status);
+        console.error('[Weather] RESPONSE:', error?.response?.data);
+        console.error('[Weather] URL:', error?.config?.url);
+        console.log('[Weather] FINAL REQUEST PARAMS:', {
+          lat: params.lat,
+          lon: params.lon,
           district: params.district,
           state: params.state,
-          formattedAddress: `${params.locationName}, ${params.district}, ${params.state}`,
+          locationName: params.locationName,
         });
-        setWeatherData(fallback);
+
+        setWeatherData({
+          temperature: 0,
+          condition: 'Weather data temporarily unavailable',
+          weatherCode: -1,
+          humidity: 0,
+          windSpeed: 0,
+          rainProbability: 0,
+          precipitation: 0,
+          location: params.locationName,
+          district: params.district,
+          state: params.state,
+          forecast: [],
+          alerts: [
+            {
+              id: 'w-unavailable',
+              type: 'disease',
+              severity: 'warning',
+              title: 'Weather Service Notice',
+              description: `The Open-Meteo meteorological feed is temporarily unreachable for ${params.locationName}, ${params.district}.`,
+              actionableStep: 'Please check your connection or retry in a few moments.',
+            },
+          ],
+          source: 'Open-Meteo Weather API',
+          sourceStatus: 'UNAVAILABLE',
+          lastUpdated: new Date().toISOString(),
+          errorMessage: 'Weather data temporarily unavailable',
+        });
       } finally {
         setLoading(false);
       }
     },
-    [farmLoc]
+    []
   );
 
   // Initial fetch on mount
@@ -355,6 +403,11 @@ export const WeatherPage: React.FC = () => {
   };
 
   const isUnavailable = weatherData.sourceStatus === 'UNAVAILABLE';
+  const badgeStatus = loading
+    ? 'FETCHING LIVE WEATHER...'
+    : isUnavailable
+    ? 'LIVE WEATHER UNAVAILABLE'
+    : 'LIVE • Open-Meteo';
   const expectedRainMm =
     typeof weatherData.forecast?.[0]?.precipitationSum === 'number'
       ? weatherData.forecast[0].precipitationSum
@@ -392,7 +445,7 @@ export const WeatherPage: React.FC = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <DataBadge
-            status={isUnavailable ? 'DEMO DATA' : 'CURRENT FORECAST DATA'}
+            status={badgeStatus}
             lastUpdated={formatWeatherTimestamp(weatherData.lastUpdated)}
           />
         </div>

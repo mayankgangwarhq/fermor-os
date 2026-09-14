@@ -11,14 +11,19 @@ export const DataBadge: React.FC<DataBadgeProps> = ({ status, lastUpdated, size 
     switch (status) {
       case 'LIVE DATA':
       case 'LIVE API':
+      case 'LIVE • Open-Meteo':
       case 'CURRENT FORECAST DATA':
         return 'badge-live';
+      case 'FETCHING LIVE WEATHER...':
+        return 'badge-ai';
+      case 'LIVE WEATHER UNAVAILABLE':
+        return 'badge-demo';
       case 'VERIFIED DB':
         return 'badge-verified';
       case 'AI GUIDANCE':
         return 'badge-ai';
       default:
-        return 'badge-demo';
+        return 'badge-live';
     }
   };
 
