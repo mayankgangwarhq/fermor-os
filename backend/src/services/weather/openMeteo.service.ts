@@ -278,6 +278,14 @@ const fetchWithHttps = (url: string, timeoutMs: number = 12000): Promise<any> =>
   });
 };
 
+interface WeatherCacheEntry {
+  data: IWeatherData;
+  expiresAt: number;
+}
+
+const weatherCache = new Map<string, WeatherCacheEntry>();
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes cache
+
 export class OpenMeteoWeatherService {
   /**
    * Fetches live weather metrics directly from Open-Meteo API using latitude & longitude.
@@ -337,6 +345,19 @@ export class OpenMeteoWeatherService {
       state = DEFAULT_FALLBACK_LOCATION.state;
       locationName = `${district}, ${state}`;
       isFallback = true;
+    }
+
+    const cacheKey = `${lat.toFixed(3)}_${lon.toFixed(3)}`;
+    const cachedEntry = weatherCache.get(cacheKey);
+
+    if (cachedEntry && cachedEntry.expiresAt > Date.now()) {
+      logger.info(`[OPEN-METEO CACHE] Serving cached weather data for key ${cacheKey}`);
+      return {
+        ...cachedEntry.data,
+        location: locationName || cachedEntry.data.location,
+        district: district || cachedEntry.data.district,
+        state: state || cachedEntry.data.state,
+      };
     }
 
     const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=7`;
@@ -484,7 +505,7 @@ export class OpenMeteoWeatherService {
         });
       }
 
-      return {
+      const weatherResult: IWeatherData = {
         location: locationName,
         district,
         state,
@@ -504,9 +525,28 @@ export class OpenMeteoWeatherService {
         isFallback,
         lastUpdated: new Date().toISOString(),
       };
+
+      weatherCache.set(cacheKey, {
+        data: weatherResult,
+        expiresAt: Date.now() + CACHE_TTL_MS,
+      });
+
+      return weatherResult;
     } catch (err: any) {
       const errCode = err.code || err.name || 'UNKNOWN';
       logger.error(`[OPEN-METEO ERROR] API query error: ${errCode} - ${err.message}`);
+
+      if (cachedEntry) {
+        logger.warn(`[OPEN-METEO CACHE] Serving existing cached weather data for key ${cacheKey} due to error.`);
+        return {
+          ...cachedEntry.data,
+          location: locationName || cachedEntry.data.location,
+          district: district || cachedEntry.data.district,
+          state: state || cachedEntry.data.state,
+          sourceStatus: 'LIVE DATA',
+          isFallback: false,
+        };
+      }
 
       return {
         location: locationName,
