@@ -232,6 +232,52 @@ export const mapWeatherCode = (code: number): { condition: string; icon: string 
   return { condition: 'Fair Weather', icon: 'Sun' };
 };
 
+import https from 'https';
+
+/**
+ * Robust fallback HTTP request helper using Node built-in https module.
+ */
+const fetchWithHttps = (url: string, timeoutMs: number = 12000): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    const req = https.get(
+      url,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; AGRINEXT/1.0; +https://frontend-one-xi-69.vercel.app)',
+          Accept: 'application/json',
+        },
+        timeout: timeoutMs,
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+        res.on('end', () => {
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            try {
+              resolve(JSON.parse(data));
+            } catch (err: any) {
+              reject(new Error(`Failed to parse Open-Meteo JSON response: ${err.message}`));
+            }
+          } else {
+            reject(new Error(`Open-Meteo HTTP error ${res.statusCode}: ${data.slice(0, 200)}`));
+          }
+        });
+      }
+    );
+
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error(`Open-Meteo request timed out after ${timeoutMs}ms`));
+    });
+
+    req.on('error', (err) => {
+      reject(err);
+    });
+  });
+};
+
 export class OpenMeteoWeatherService {
   /**
    * Fetches live weather metrics directly from Open-Meteo API using latitude & longitude.
@@ -306,23 +352,42 @@ export class OpenMeteoWeatherService {
     try {
       logger.info(`[OPEN-METEO REQUEST] URL: ${openMeteoUrl}`);
 
-      const response = await fetch(openMeteoUrl, {
-        headers: {
-          'User-Agent': 'AGRINEXT-Agritech-Platform/1.0',
-          Accept: 'application/json',
-        },
-        signal: AbortSignal.timeout(10000),
-      });
+      let data: any;
 
-      logger.info(`[OPEN-METEO RESPONSE] Status: ${response.status} ${response.statusText}`);
+      // Strategy 1: Attempt global fetch if available with portable AbortController
+      if (typeof fetch === 'function') {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => '');
-        logger.error(`[OPEN-METEO ERROR] HTTP ${response.status}: ${errorText}`);
-        throw new Error(`Open-Meteo HTTP error ${response.status}: ${response.statusText}`);
+        try {
+          const response = await fetch(openMeteoUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; AGRINEXT/1.0; +https://frontend-one-xi-69.vercel.app)',
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
+          });
+
+          logger.info(`[OPEN-METEO RESPONSE] Status: ${response.status} ${response.statusText}`);
+
+          if (response.ok) {
+            data = await response.json();
+          } else {
+            const errorText = await response.text().catch(() => '');
+            logger.warn(`[OPEN-METEO FETCH WARN] HTTP ${response.status}: ${errorText}. Attempting https fallback.`);
+          }
+        } catch (fetchErr: any) {
+          logger.warn(`[OPEN-METEO FETCH WARN] fetch failed (${fetchErr.message}). Attempting https fallback.`);
+        } finally {
+          clearTimeout(timeoutId);
+        }
       }
 
-      const data: any = await response.json();
+      // Strategy 2: If fetch was skipped or failed, use Node built-in https module
+      if (!data || !data.current || !data.daily) {
+        logger.info('[OPEN-METEO HTTPS] Querying Open-Meteo via node:https module...');
+        data = await fetchWithHttps(openMeteoUrl, 12000);
+      }
 
       if (!data || !data.current || !data.daily) {
         logger.error('[OPEN-METEO ERROR] Malformed Open-Meteo response structure');
@@ -440,7 +505,8 @@ export class OpenMeteoWeatherService {
         lastUpdated: new Date().toISOString(),
       };
     } catch (err: any) {
-      logger.error(`[OPEN-METEO ERROR] API query error: ${err.message}`);
+      const errCode = err.code || err.name || 'UNKNOWN';
+      logger.error(`[OPEN-METEO ERROR] API query error: ${errCode} - ${err.message}`);
 
       return {
         location: locationName,
@@ -470,7 +536,7 @@ export class OpenMeteoWeatherService {
         sourceStatus: 'UNAVAILABLE',
         isFallback,
         lastUpdated: new Date().toISOString(),
-        errorMessage: 'Weather data temporarily unavailable',
+        errorMessage: err.message || 'Weather data temporarily unavailable',
       };
     }
   }

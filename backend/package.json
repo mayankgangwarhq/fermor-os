@@ -8,6 +8,9 @@
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "keywords": [
     "farmer-os",
     "agritech",
