@@ -186,10 +186,13 @@ export interface FarmRevenue {
 
 export interface WeatherDayForecast {
   day: string;
+  date?: string;
   tempMax: number;
   tempMin: number;
   condition: string;
   rainChance: number;
+  precipitationSum?: number;
+  weatherCode?: number;
   icon: string;
 }
 
@@ -205,16 +208,23 @@ export interface WeatherAlert {
 export interface WeatherData {
   temperature: number;
   condition: string;
+  weatherCode?: number;
   humidity: number;
   windSpeed: number;
   rainProbability: number;
+  precipitation?: number;
   location: string;
   district: string;
   state: string;
+  latitude?: number;
+  longitude?: number;
   forecast: WeatherDayForecast[];
   alerts: WeatherAlert[];
-  sourceStatus: 'LIVE DATA' | 'DEMO DATA';
+  source?: string;
+  sourceStatus: 'LIVE DATA' | 'DEMO DATA' | 'UNAVAILABLE';
+  isFallback?: boolean;
   lastUpdated: string;
+  errorMessage?: string;
 }
 
 export interface MandiPrice {

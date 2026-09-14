@@ -2,34 +2,20 @@ import { SchemeModel } from '../models/Scheme';
 import { IScheme } from '../types';
 import { isDbConnected } from '../config/db';
 import { buildIdQuery } from '../utils/dbHelper';
+import { PmKisanService } from './schemes/pmKisan.service';
+import { PmfbyService } from './schemes/pmfby.service';
+import { KccService } from './schemes/kcc.service';
+import { RajasthanSchemesService } from './schemes/rajasthanSchemes.service';
+
+export { PmKisanService, PmfbyService, KccService, RajasthanSchemesService };
 
 const sampleSchemesFallback: IScheme[] = [
+  PmKisanService.getSchemeDetails(),
+  PmfbyService.getSchemeDetails(),
+  KccService.getSchemeDetails(),
+  ...RajasthanSchemesService.getSchemeList(),
   {
-    id: 'sch-1',
-    title: 'Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)',
-    titleHi: 'प्रधानमंत्री किसान सम्मान निधि (पीएम-किसान)',
-    category: 'direct_benefit',
-    sponsor: 'Central Govt',
-    benefitSummary: 'Direct income support of ₹6,000 per year transferred in three equal 4-monthly installments of ₹2,000 directly into the bank accounts of all landholding farmer families.',
-    benefitSummaryHi: 'सभी भूमिधारक किसान परिवारों के बैंक खातों में सीधे ₹6,000 प्रति वर्ष की वित्तीय सहायता।',
-    eligibilityCriteria: [
-      'All landholding small and marginal farmer families having cultivable landholding in their names',
-      'Valid Aadhaar card linked with active bank account (DBT enabled)',
-      'Updated land revenue records (Khatauni / e-KYC verified)',
-    ],
-    documentsRequired: [
-      'Aadhaar Card',
-      'Landholding ownership certificate / Revenue Jamabandi',
-      'Bank passbook photocopy with IFSC code',
-    ],
-    subsidyPercentage: 100,
-    maxFinancialAssistance: '₹6,000 / year',
-    applicationUrl: 'https://pmkisan.gov.in',
-    applicationDeadline: 'Continuous / Open Year-round',
-    active: true,
-  },
-  {
-    id: 'sch-2',
+    id: 'sch-pm-kusum',
     title: 'PM-KUSUM (Solar Agricultural Pump Scheme)',
     titleHi: 'पीएम-कुसुम सौर ऊर्जा पंप योजना',
     category: 'subsidy',
@@ -49,28 +35,6 @@ const sampleSchemesFallback: IScheme[] = [
     maxFinancialAssistance: 'Up to ₹2,50,000 per pump',
     applicationUrl: 'https://pmkusum.mnre.gov.in',
     applicationDeadline: 'State-wise seasonal tranches',
-    active: true,
-  },
-  {
-    id: 'sch-3',
-    title: 'Pradhan Mantri Fasal Bima Yojana (PMFBY)',
-    titleHi: 'प्रधानमंत्री फसल बीमा योजना (पीएमएफबीवाई)',
-    category: 'insurance',
-    sponsor: 'Joint',
-    benefitSummary: 'Comprehensive crop insurance against non-preventable natural risks with a uniform nominal premium of only 1.5% for Rabi, 2% for Kharif.',
-    benefitSummaryHi: 'प्राकृतिक आपदाओं, कीटों व रोगों से फसल नुकसान पर पूर्ण बीमा सुरक्षा।',
-    eligibilityCriteria: [
-      'All farmers growing notified crops in notified areas (loanee and non-loanee sharecroppers)',
-    ],
-    documentsRequired: [
-      'Land Revenue Record (ROR / Jamabandi)',
-      'Sowing certificate issued by Patwari / Village Agriculture Officer',
-      'Bank passbook details',
-    ],
-    subsidyPercentage: 85,
-    maxFinancialAssistance: '100% of Sum Insured per hectare based on loss assessment',
-    applicationUrl: 'https://pmfby.gov.in',
-    applicationDeadline: 'Within 15 days of crop sowing',
     active: true,
   },
 ];
@@ -98,6 +62,18 @@ export class SchemeService {
     if (filter?.sponsor) query.sponsor = filter.sponsor;
 
     return SchemeModel.find(query).sort({ category: 1 });
+  }
+
+  public static async getPmKisanDetails(filters?: {
+    state?: string;
+    district?: string;
+    subDistrict?: string;
+    block?: string;
+    village?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    return PmKisanService.getAdapterResponse(filters);
   }
 
   public static async getSchemeById(id: string) {

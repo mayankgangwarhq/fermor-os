@@ -232,7 +232,7 @@ export const PublicHeader: React.FC = () => {
 
             {/* Get Started button */}
             <button
-              onClick={() => navigate('/role-selection', { state: { from: { pathname: '/dashboard' } } })}
+              onClick={() => navigate('/onboarding')}
               style={{
                 padding: '8px 16px',
                 fontSize: '0.88rem',

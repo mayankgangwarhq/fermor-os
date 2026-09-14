@@ -129,27 +129,38 @@ export interface IWeatherAlert {
 
 export interface IWeatherForecastDay {
   day: string;
+  date?: string;
   tempMax: number;
   tempMin: number;
   condition: string;
   rainChance: number;
+  precipitationSum?: number;
+  weatherCode?: number;
   icon: string;
 }
 
 export interface IWeatherData {
   _id?: string;
+  id?: string;
   location: string;
   district: string;
   state: string;
+  latitude?: number;
+  longitude?: number;
   temperature: number;
   condition: string;
+  weatherCode?: number;
   humidity: number;
+  precipitation?: number;
   windSpeed: number;
   rainProbability: number;
   forecast: IWeatherForecastDay[];
   alerts: IWeatherAlert[];
-  sourceStatus: 'LIVE DATA' | 'DEMO DATA';
+  source?: string;
+  sourceStatus: 'LIVE DATA' | 'DEMO DATA' | 'UNAVAILABLE';
+  isFallback?: boolean;
   lastUpdated: string | Date;
+  errorMessage?: string;
 }
 
 export interface IAlert {

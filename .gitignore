@@ -13,9 +13,14 @@ build/
 
 # Environment Variables & Secrets
 .env
+.env.*
 .env.local
 .env.*.local
+*.env
+**/.env
+**/.env.*
 !.env.example
+!**/.env.example
 
 # Logs
 *.log

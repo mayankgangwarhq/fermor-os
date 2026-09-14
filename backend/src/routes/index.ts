@@ -15,6 +15,7 @@ import { mandiRoutes } from './mandi.routes';
 import { schemeRoutes } from './scheme.routes';
 import { dashboardRoutes } from './dashboard.routes';
 import { assistantRoutes } from './assistant.routes';
+import { integrationRoutes } from './integration.routes';
 
 const router = Router();
 
@@ -33,6 +34,7 @@ router.use('/mandi', mandiRoutes);
 router.use('/schemes', schemeRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/assistant', assistantRoutes);
+router.use('/integrations', integrationRoutes);
 router.use('/sih', sihRoutes);
 
 export const apiRoutes = router;

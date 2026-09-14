@@ -16,6 +16,24 @@ export class SchemeController {
     }
   }
 
+  public static async getPmKisanDetails(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { state, district, subDistrict, block, village, limit, offset } = req.query;
+      const pmKisan = await SchemeService.getPmKisanDetails({
+        state: state as string,
+        district: district as string,
+        subDistrict: subDistrict as string,
+        block: block as string,
+        village: village as string,
+        limit: limit ? parseInt(limit as string, 10) : undefined,
+        offset: offset ? parseInt(offset as string, 10) : undefined,
+      });
+      return sendSuccess(res, pmKisan, 'Official PM-KISAN scheme & Data.gov.in beneficiary records retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   public static async getSchemeById(req: Request, res: Response, next: NextFunction) {
     try {
       const scheme = await SchemeService.getSchemeById(req.params.id as string);

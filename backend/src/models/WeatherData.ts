@@ -1,9 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { IWeatherData } from '../types';
 
-export interface IWeatherDataDocument extends IWeatherData, Document {
-  _id: any;
-}
+export interface IWeatherDataDocument extends Omit<IWeatherData, 'id' | '_id'>, Document {}
 
 const WeatherDataSchema = new Schema<IWeatherDataDocument>(
   {
@@ -43,10 +41,13 @@ const WeatherDataSchema = new Schema<IWeatherDataDocument>(
     forecast: [
       {
         day: String,
+        date: String,
         tempMax: Number,
         tempMin: Number,
         condition: String,
         rainChance: Number,
+        precipitationSum: Number,
+        weatherCode: Number,
         icon: String,
       },
     ],
@@ -62,8 +63,8 @@ const WeatherDataSchema = new Schema<IWeatherDataDocument>(
     ],
     sourceStatus: {
       type: String,
-      enum: ['LIVE DATA', 'DEMO DATA'],
-      default: 'DEMO DATA',
+      enum: ['LIVE DATA', 'DEMO DATA', 'UNAVAILABLE'],
+      default: 'LIVE DATA',
     },
     lastUpdated: {
       type: Date,

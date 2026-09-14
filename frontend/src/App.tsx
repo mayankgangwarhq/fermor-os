@@ -115,6 +115,7 @@ export default function App() {
                     <Route path="/register" element={<Navigate to="/role-selection" replace />} />
                     <Route path="/register/:role" element={<RegisterPage />} />
                     <Route path="/onboarding" element={<OnboardingPage />} />
+                    <Route path="/get-started" element={<OnboardingPage />} />
 
                     {/* 2. PROTECTED FARMER WORKSPACE ROUTES (AUTHENTICATION REQUIRED) */}
                     <Route

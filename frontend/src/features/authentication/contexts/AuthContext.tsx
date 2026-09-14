@@ -14,7 +14,7 @@ export interface AuthContextType {
   login: (emailOrPhone: string, password?: string, role?: UserRole) => Promise<void>;
   sendAadhaarOtp: (aadhaarNumber: string) => Promise<{ demoOtp: string; aadhaarLast4: string; message: string }>;
   loginWithAadhaarOtp: (aadhaarNumber: string, otp: string) => Promise<void>;
-  register: (payload: { name: string; email: string; password?: string; role?: UserRole; phone?: string; aadhaarNumber?: string; state?: string; district?: string; village?: string }) => Promise<void>;
+  register: (payload: { name: string; email: string; password?: string; role?: UserRole; phone?: string; aadhaarNumber?: string; state?: string; district?: string; village?: string; language?: string }) => Promise<void>;
   logout: () => void;
   demoMode: boolean;
   isLoading: boolean;
@@ -122,7 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (payload: { name: string; email: string; password?: string; role?: UserRole; phone?: string; aadhaarNumber?: string; state?: string; district?: string; village?: string }) => {
+  const register = async (payload: { name: string; email: string; password?: string; role?: UserRole; phone?: string; aadhaarNumber?: string; state?: string; district?: string; village?: string; language?: string }) => {
     setIsLoading(true);
     try {
       const res = await authService.register(payload);

@@ -40,5 +40,9 @@ export const config = {
   // Mandi Rates Configuration (Auto-enables data_gov when DATA_GOV_API_KEY is present, with DEMO fallback)
   mandiProvider: process.env.MANDI_PROVIDER || (process.env.DATA_GOV_API_KEY ? 'data_gov' : 'demo'),
   dataGovApiKey: process.env.DATA_GOV_API_KEY || '',
+  // PM-KISAN Official Data.gov.in Resource Configuration
+  pmKisanResourceId: process.env.PM_KISAN_RESOURCE_ID || '388208c6-d82a-4190-90df-91aa2c326fec',
+  pmKisanSourceUrl: process.env.PM_KISAN_SOURCE_URL || 'https://pmkisan.gov.in/',
+  pmKisanDatasetUrl: process.env.PM_KISAN_DATASET_URL || 'https://data.gov.in/catalog/pm-kisan-scheme',
 };
 

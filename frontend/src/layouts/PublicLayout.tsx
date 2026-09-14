@@ -90,7 +90,7 @@ export const PublicLayout: React.FC = () => {
                   <span onClick={() => navigate('/contact')} style={{ cursor: 'pointer', color: '#ffffff' }}>Contact Desk</span>
                   <span onClick={() => navigate('/feedback')} style={{ cursor: 'pointer', color: '#ffffff' }}>Give Feedback</span>
                   <span onClick={() => navigate('/role-selection')} style={{ cursor: 'pointer', color: '#ffffff' }}>{t('signIn', 'Sign In')}</span>
-                  <span onClick={() => navigate('/role-selection')} style={{ cursor: 'pointer', color: '#ffffff' }}>{t('getStarted', 'Get Started')}</span>
+                  <span onClick={() => navigate('/onboarding')} style={{ cursor: 'pointer', color: '#ffffff' }}>{t('getStarted', 'Get Started')}</span>
                 </div>
               </div>
             </div>

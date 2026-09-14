@@ -149,7 +149,7 @@ export const pestApi = {
 };
 
 export const weatherApi = {
-  getWeather: async (params?: { lat?: number; lon?: number; district?: string; state?: string }): Promise<WeatherData> => {
+  getWeather: async (params?: { lat?: number; lon?: number; district?: string; state?: string; locationName?: string }): Promise<WeatherData> => {
     const res = await apiClient.get('/weather', { params });
     return res.data?.data;
   },
@@ -434,6 +434,10 @@ export const schemeApi = {
     const res = await apiClient.get('/schemes', { params });
     return res.data?.data || [];
   },
+  getPmKisanDetails: async () => {
+    const res = await apiClient.get('/schemes/pm-kisan');
+    return res.data?.data;
+  },
   getById: async (id: string) => {
     const res = await apiClient.get(`/schemes/${id}`);
     return res.data?.data;
@@ -460,6 +464,17 @@ export const assistantApi = {
     imageBase64?: string;
   }) => {
     const res = await apiClient.post('/assistant/query', payload);
+    return res.data?.data;
+  },
+};
+
+export const integrationApi = {
+  getIntegrations: async () => {
+    const res = await apiClient.get('/integrations');
+    return res.data?.data;
+  },
+  getRegistry: async () => {
+    const res = await apiClient.get('/integrations/registry');
     return res.data?.data;
   },
 };

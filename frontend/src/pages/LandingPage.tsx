@@ -1805,7 +1805,7 @@ export const LandingPage: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate('/role-selection', { state: { from: { pathname: '/dashboard' } } })}
+                  onClick={() => navigate('/onboarding')}
                   style={{
                     backgroundColor: '#16A34A',
                     color: '#ffffff',
