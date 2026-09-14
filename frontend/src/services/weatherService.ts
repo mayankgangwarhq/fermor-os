@@ -6,11 +6,11 @@ import { weatherApi } from './api';
  * Fetches real-time weather through the AGRINEXT backend Open-Meteo integration.
  */
 export const fetchWeatherForCoordinates = async (
-  latitude: number,
-  longitude: number,
-  locationName: string = 'Indore',
-  districtName: string = 'Indore',
-  stateName: string = 'Madhya Pradesh'
+  latitude: number = DEFAULT_FARM_LOCATION.latitude,
+  longitude: number = DEFAULT_FARM_LOCATION.longitude,
+  locationName: string = DEFAULT_FARM_LOCATION.village || 'Jagatpura (VGU)',
+  districtName: string = DEFAULT_FARM_LOCATION.district || 'Jaipur',
+  stateName: string = DEFAULT_FARM_LOCATION.state || 'Rajasthan'
 ): Promise<WeatherData> => {
   try {
     const data = await weatherApi.getWeather({
@@ -18,6 +18,7 @@ export const fetchWeatherForCoordinates = async (
       lon: longitude,
       district: districtName,
       state: stateName,
+      locationName: locationName,
     });
 
     if (data && data.sourceStatus !== 'UNAVAILABLE') {
@@ -74,11 +75,11 @@ export const fetchWeatherForLocation = async (
 ): Promise<WeatherData> => {
   if (typeof locOrQuery === 'object' && locOrQuery !== null) {
     return await fetchWeatherForCoordinates(
-      locOrQuery.latitude,
-      locOrQuery.longitude,
-      locOrQuery.village || locOrQuery.city || locOrQuery.district || 'Farm Location',
-      locOrQuery.district || 'Indore',
-      locOrQuery.state || 'Madhya Pradesh'
+      locOrQuery.latitude || DEFAULT_FARM_LOCATION.latitude,
+      locOrQuery.longitude || DEFAULT_FARM_LOCATION.longitude,
+      locOrQuery.village || locOrQuery.city || locOrQuery.district || 'Jagatpura (VGU)',
+      locOrQuery.district || 'Jaipur',
+      locOrQuery.state || 'Rajasthan'
     );
   }
 
@@ -88,6 +89,6 @@ export const fetchWeatherForLocation = async (
     DEFAULT_FARM_LOCATION.longitude,
     locOrQuery,
     locOrQuery,
-    'Madhya Pradesh'
+    'Rajasthan'
   );
 };

@@ -203,10 +203,10 @@ const KNOWN_DISTRICT_COORDINATES: Record<string, { lat: number; lon: number; sta
 };
 
 const DEFAULT_FALLBACK_LOCATION = {
-  lat: 22.7196,
-  lon: 75.8577,
-  district: 'Indore',
-  state: 'Madhya Pradesh',
+  lat: 26.9124,
+  lon: 75.7873,
+  district: 'Jaipur',
+  state: 'Rajasthan',
 };
 
 /**
@@ -262,8 +262,8 @@ export class OpenMeteoWeatherService {
       lon >= -180 &&
       lon <= 180
     ) {
-      if (!district) district = 'Local Farm Area';
-      if (!state) state = 'India';
+      if (!district) district = 'Jaipur';
+      if (!state) state = 'Rajasthan';
       if (!locationName) locationName = `${district}, ${state}`;
     } else if (district) {
       const lookupKey = district.toLowerCase().replace(/[^a-z]/g, '');
@@ -293,11 +293,15 @@ export class OpenMeteoWeatherService {
       isFallback = true;
     }
 
-    logger.info(
-      `[WEATHER REQUEST] Lat: ${lat}, Lon: ${lon}, District: "${district}", State: "${state}", LocationName: "${locationName}", isFallback: ${isFallback}`
-    );
-
     const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=7`;
+
+    logger.info(`[Weather] Selected State: ${state}`);
+    logger.info(`[Weather] Selected District: ${district}`);
+    logger.info(`[Weather] Selected Farm: ${locationName}`);
+    logger.info(`[Weather] Latitude: ${lat}`);
+    logger.info(`[Weather] Longitude: ${lon}`);
+    logger.info(`[Weather] Open-Meteo coordinates: latitude=${lat}, longitude=${lon}`);
+    logger.info(`[Weather] API URL: ${openMeteoUrl}`);
 
     try {
       logger.info(`[OPEN-METEO REQUEST] URL: ${openMeteoUrl}`);

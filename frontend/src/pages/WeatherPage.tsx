@@ -80,10 +80,8 @@ export const WeatherPage: React.FC = () => {
 
   const [selectedState, setSelectedState] = useState<string>(defaultState);
   const [selectedDistrict, setSelectedDistrict] = useState<string>(defaultDistrict);
-  const [selectedLocationName, setSelectedLocationName] = useState<string>(
-    farmLoc.village || 'Jagatpura (VGU)'
-  );
-  const [selectedOptionKey, setSelectedOptionKey] = useState<string>('profile-farm');
+  const [selectedLocationName, setSelectedLocationName] = useState<string>('Jagatpura (VGU)');
+  const [selectedOptionKey, setSelectedOptionKey] = useState<string>('pop-0');
 
   const [weatherData, setWeatherData] = useState<WeatherData>(initialWeather);
   const [loading, setLoading] = useState(false);
@@ -97,12 +95,12 @@ export const WeatherPage: React.FC = () => {
   // Current district object with coordinates and popular locations
   const currentDistrictObj = useMemo(() => {
     return (
-      availableDistricts.find((d) => d.name === selectedDistrict) ||
+      availableDistricts.find((d) => d.name.toLowerCase() === selectedDistrict.toLowerCase()) ||
       availableDistricts[0] || {
-        name: selectedDistrict,
+        name: selectedDistrict || 'Jaipur',
         lat: 26.9124,
         lon: 75.7873,
-        popularLocations: ['Central APMC Hub'],
+        popularLocations: ['Jagatpura (VGU)', 'Sanganer APMC', 'Chomu Mandi'],
       }
     );
   }, [availableDistricts, selectedDistrict]);
@@ -118,17 +116,28 @@ export const WeatherPage: React.FC = () => {
       type: 'my-farm' | 'popular' | 'district-hub';
     }> = [];
 
-    // A. Check user's active farm from FarmLocationContext (Priority)
-    if (
-      farmLoc.district?.toLowerCase() === selectedDistrict.toLowerCase() ||
-      farmLoc.state?.toLowerCase() === selectedState.toLowerCase()
-    ) {
+    // A. Check user's active farm from FarmLocationContext (Only if matching current state & district)
+    const isMatchingFarm =
+      farmLoc.district?.toLowerCase() === selectedDistrict.toLowerCase() &&
+      farmLoc.state?.toLowerCase() === selectedState.toLowerCase();
+
+    if (isMatchingFarm) {
+      // Validate coordinates belong to region or use currentDistrictObj coords
+      const safeLat =
+        typeof farmLoc.latitude === 'number' && !isNaN(farmLoc.latitude)
+          ? farmLoc.latitude
+          : currentDistrictObj.lat;
+      const safeLon =
+        typeof farmLoc.longitude === 'number' && !isNaN(farmLoc.longitude)
+          ? farmLoc.longitude
+          : currentDistrictObj.lon;
+
       options.push({
         key: 'profile-farm',
-        label: `🚜 Active Farm: ${farmLoc.village || 'My Farm Plot'} (${farmLoc.latitude.toFixed(4)}°, ${farmLoc.longitude.toFixed(4)}°)`,
+        label: `🚜 Active Farm: ${farmLoc.village || 'My Farm Plot'} (${safeLat.toFixed(4)}°, ${safeLon.toFixed(4)}°)`,
         locationName: farmLoc.village || 'Jagatpura (VGU)',
-        lat: farmLoc.latitude,
-        lon: farmLoc.longitude,
+        lat: safeLat,
+        lon: safeLon,
         type: 'my-farm',
       });
     }
@@ -157,7 +166,7 @@ export const WeatherPage: React.FC = () => {
     if (currentDistrictObj.popularLocations && currentDistrictObj.popularLocations.length > 0) {
       currentDistrictObj.popularLocations.forEach((loc, idx) => {
         options.push({
-          key: `pop-${idx}-${loc}`,
+          key: `pop-${idx}`,
           label: `📍 ${loc}`,
           locationName: loc,
           lat: currentDistrictObj.lat,
@@ -184,6 +193,18 @@ export const WeatherPage: React.FC = () => {
   const fetchWeather = useCallback(
     async (params: { lat: number; lon: number; district: string; state: string; locationName: string }) => {
       setLoading(true);
+
+      console.log('[Weather] Selected State:', params.state);
+      console.log('[Weather] Selected District:', params.district);
+      console.log('[Weather] Selected Farm:', params.locationName);
+      console.log('[Weather] Latitude:', params.lat);
+      console.log('[Weather] Longitude:', params.lon);
+      console.log(
+        '[Weather] API URL:',
+        `/weather?lat=${params.lat}&lon=${params.lon}&district=${encodeURIComponent(params.district)}&state=${encodeURIComponent(params.state)}&locationName=${encodeURIComponent(params.locationName)}`
+      );
+      console.log('[Weather] Open-Meteo coordinates:', `latitude=${params.lat}, longitude=${params.lon}`);
+
       try {
         const res = await weatherApi.getWeather({
           lat: params.lat,
@@ -227,22 +248,21 @@ export const WeatherPage: React.FC = () => {
 
   // Initial fetch on mount
   useEffect(() => {
-    const coords = currentDistrictObj;
-    const initialLat =
-      farmLoc.district?.toLowerCase() === selectedDistrict.toLowerCase()
-        ? farmLoc.latitude
-        : coords.lat;
-    const initialLon =
-      farmLoc.district?.toLowerCase() === selectedDistrict.toLowerCase()
-        ? farmLoc.longitude
-        : coords.lon;
+    const defaultOption = availableLocationOptions[0] || {
+      lat: currentDistrictObj.lat,
+      lon: currentDistrictObj.lon,
+      locationName: 'Jagatpura (VGU)',
+    };
+
+    setSelectedLocationName(defaultOption.locationName);
+    setSelectedOptionKey(defaultOption.key || 'pop-0');
 
     fetchWeather({
-      lat: initialLat,
-      lon: initialLon,
+      lat: defaultOption.lat,
+      lon: defaultOption.lon,
       district: selectedDistrict,
       state: selectedState,
-      locationName: selectedLocationName,
+      locationName: defaultOption.locationName,
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -285,17 +305,9 @@ export const WeatherPage: React.FC = () => {
     setSelectedLocationName(firstLoc);
     setSelectedOptionKey('pop-0');
 
-    // Priority to farm coordinates if matching
-    const isMatchingFarm =
-      farmLoc.district?.toLowerCase() === newDistrict.toLowerCase() &&
-      farmLoc.state?.toLowerCase() === selectedState.toLowerCase();
-
-    const targetLat = isMatchingFarm ? farmLoc.latitude : distObj.lat;
-    const targetLon = isMatchingFarm ? farmLoc.longitude : distObj.lon;
-
     await fetchWeather({
-      lat: targetLat,
-      lon: targetLon,
+      lat: distObj.lat,
+      lon: distObj.lon,
       district: distObj.name,
       state: selectedState,
       locationName: firstLoc,
