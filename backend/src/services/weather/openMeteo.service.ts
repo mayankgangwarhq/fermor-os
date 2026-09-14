@@ -252,7 +252,16 @@ export class OpenMeteoWeatherService {
     let isFallback = false;
 
     // 1. Resolve coordinates
-    if (typeof lat === 'number' && typeof lon === 'number' && !isNaN(lat) && !isNaN(lon)) {
+    if (
+      typeof lat === 'number' &&
+      typeof lon === 'number' &&
+      !isNaN(lat) &&
+      !isNaN(lon) &&
+      lat >= -90 &&
+      lat <= 90 &&
+      lon >= -180 &&
+      lon <= 180
+    ) {
       if (!district) district = 'Local Farm Area';
       if (!state) state = 'India';
       if (!locationName) locationName = `${district}, ${state}`;
@@ -284,26 +293,35 @@ export class OpenMeteoWeatherService {
       isFallback = true;
     }
 
-    try {
-      const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,rain,weather_code,wind_speed_10m,surface_pressure&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=auto&forecast_days=7`;
+    logger.info(
+      `[WEATHER REQUEST] Lat: ${lat}, Lon: ${lon}, District: "${district}", State: "${state}", LocationName: "${locationName}", isFallback: ${isFallback}`
+    );
 
-      logger.info(`[OpenMeteoService] Querying Open-Meteo for lat=${lat}, lon=${lon} (${locationName})`);
+    const openMeteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=7`;
+
+    try {
+      logger.info(`[OPEN-METEO REQUEST] URL: ${openMeteoUrl}`);
 
       const response = await fetch(openMeteoUrl, {
         headers: {
           'User-Agent': 'AGRINEXT-Agritech-Platform/1.0',
           Accept: 'application/json',
         },
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(10000),
       });
 
+      logger.info(`[OPEN-METEO RESPONSE] Status: ${response.status} ${response.statusText}`);
+
       if (!response.ok) {
-        throw new Error(`Open-Meteo HTTP error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text().catch(() => '');
+        logger.error(`[OPEN-METEO ERROR] HTTP ${response.status}: ${errorText}`);
+        throw new Error(`Open-Meteo HTTP error ${response.status}: ${response.statusText}`);
       }
 
       const data: any = await response.json();
 
       if (!data || !data.current || !data.daily) {
+        logger.error('[OPEN-METEO ERROR] Malformed Open-Meteo response structure');
         throw new Error('Invalid Open-Meteo response structure');
       }
 
@@ -322,7 +340,12 @@ export class OpenMeteoWeatherService {
       const forecast: IWeatherForecastDay[] = forecastTimes.map((dateStr: string, idx: number) => {
         const code = daily.weather_code?.[idx] ?? 0;
         const mapped = mapWeatherCode(code);
-        const dayLabel = idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short' });
+        const dayLabel =
+          idx === 0
+            ? 'Today'
+            : idx === 1
+            ? 'Tomorrow'
+            : new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short' });
         const rainChance = daily.precipitation_probability_max?.[idx] ?? 10;
         const precipSum = Math.round((daily.precipitation_sum?.[idx] ?? 0) * 10) / 10;
 
@@ -413,7 +436,7 @@ export class OpenMeteoWeatherService {
         lastUpdated: new Date().toISOString(),
       };
     } catch (err: any) {
-      logger.error(`[OpenMeteoService] API query error: ${err.message}`);
+      logger.error(`[OPEN-METEO ERROR] API query error: ${err.message}`);
 
       return {
         location: locationName,

@@ -57,6 +57,8 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({ onNavigate: pr
           navigate('/dashboard');
           break;
         case 'disease':
+          navigate('/disease-detection');
+          break;
         case 'disease-detection':
           navigate('/disease-detection');
           break;
@@ -71,6 +73,9 @@ export const FarmerDashboard: React.FC<FarmerDashboardProps> = ({ onNavigate: pr
           break;
         case 'follow-up':
           navigate('/follow-up');
+          break;
+        case 'experts':
+          navigate('/experts');
           break;
         case 'weather':
           navigate('/weather');

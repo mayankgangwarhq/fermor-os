@@ -25,7 +25,10 @@ export class ClientConfidenceEngine {
     suspectedIssue: string,
     symptoms: string[] = []
   ): ClientConfidenceEvaluation {
-    const score = Math.max(0, Math.min(100, Math.round(confidenceScore)));
+    const normalized = typeof confidenceScore === 'number' && confidenceScore > 0 && confidenceScore <= 1
+      ? Math.round(confidenceScore * 100)
+      : Math.round(confidenceScore || 0);
+    const score = Math.max(0, Math.min(100, isNaN(normalized) ? 0 : normalized));
 
     if (score >= CONFIDENCE_THRESHOLDS.HIGH_CONFIDENCE_MIN) {
       return {

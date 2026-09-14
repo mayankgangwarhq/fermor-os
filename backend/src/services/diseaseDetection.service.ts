@@ -5,6 +5,7 @@ import { isDbConnected } from '../config/db';
 import { config } from '../config/env';
 import { buildIdQuery } from '../utils/dbHelper';
 import { logger } from '../utils/logger';
+import { normalizeConfidenceDecimal, confidenceToScorePercentage } from '../utils/confidenceNormalizer';
 
 export const AGRINEXT_VISION_DIAGNOSTIC_SYSTEM_PROMPT = `You are AGRINEXT Vision, an agricultural crop-disease and pest diagnostic AI.
 
@@ -716,7 +717,19 @@ Instructions:
       return s.evidence ? `${s.name} (${s.evidence})` : s.name;
     });
 
-    const confidence = Math.max(5, Math.min(99, Math.round(raw.diagnosis?.confidence || 85)));
+    // Extract raw confidence indicators from flat or nested responses
+    const rawDiagConf = raw.confidence ?? raw.diagnosis?.confidence ?? raw.confidenceScore;
+    const rawCropConf = raw.crop_confidence ?? raw.crop?.confidence ?? rawDiagConf;
+
+    logger.info(`[GEMINI RAW CONFIDENCE] rawDiagConf=${JSON.stringify(rawDiagConf)}, rawCropConf=${JSON.stringify(rawCropConf)}`);
+
+    const normalizedDiagDecimal = normalizeConfidenceDecimal(rawDiagConf);
+    const normalizedCropDecimal = normalizeConfidenceDecimal(rawCropConf);
+
+    const confidence = confidenceToScorePercentage(normalizedDiagDecimal, 0);
+    const cropConfidence = confidenceToScorePercentage(normalizedCropDecimal, confidence || 0);
+
+    logger.info(`[NORMALIZED CONFIDENCE] decimal=${normalizedDiagDecimal}, score=${confidence}%`);
 
     let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'MEDIUM';
     if (isHealthy) {
@@ -763,12 +776,13 @@ Instructions:
       cropName: detectedCropName,
       detectedCrop: {
         name: detectedCropName,
-        confidence: Math.round(raw.crop?.confidence || confidence),
+        confidence: cropConfidence,
         matchedUserSelection: isMatch,
         note: raw.crop?.discrepancy_note || (!isMatch ? `Selected "${userCrop}" but image resembles "${detectedCropName}".` : undefined),
       },
       suspectedIssue: raw.diagnosis?.name || (isHealthy ? 'Healthy Plant' : 'Pathological Symptom Detected'),
       scientificName: raw.diagnosis?.scientific_name || '',
+      confidence: normalizedDiagDecimal ?? 0,
       confidenceScore: confidence,
       riskLevel,
       observedSymptoms: detectedSymptoms.length > 0 ? detectedSymptoms : (isHealthy ? ['Vibrant green leaf tissue', 'No visible pathogen lesions'] : ['Visible foliar discoloration']),

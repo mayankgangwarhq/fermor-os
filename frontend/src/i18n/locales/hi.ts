@@ -440,8 +440,8 @@ export default {
   plotsRegistered: 'कुल एकड़ पंजीकृत',
   activeCropsList: 'गेहूं, सोयाबीन, सरसों',
   rustWarningWhiteflyText: 'रस्ट चेतावनी व सफेद मक्खी',
-  optimalSoilMoistureText: 'अनुकूल मृदा नमी संतुलन',
   navContact: 'सहायता केंद्र (Contact)',
   navFeedback: 'फीडबैक दें (Feedback)',
   navSupportDesk: 'सहायता एवं प्राथमिकताएं',
 };
+

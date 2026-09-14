@@ -1,6 +1,7 @@
 import { config } from '../config/env';
 import { logger } from '../utils/logger';
 import { IDiagnosisRequest, IDiagnosisResult, VisionAnalysisStatus, DiagnosticType } from '../types';
+import { normalizeConfidenceDecimal, confidenceToScorePercentage } from '../utils/confidenceNormalizer';
 
 export const DEDICATED_CROP_DISEASE_SYSTEM_PROMPT = `You are AGRINEXT Crop Disease Vision Engine. Analyze ONLY the actual uploaded plant/leaf image. Your primary task is to identify visually supported crop diseases, pests, nutrient deficiencies, physical damage, or healthy condition.
 
@@ -23,16 +24,14 @@ IMPORTANT DIAGNOSTIC RULES:
 - Never fabricate a disease.
 - Never return Yellow Rust unless the uploaded image actually supports it.
 - Never return Wheat unless wheat is actually visible or strongly supported.
-- Never return a 97% confidence score unless the visual evidence genuinely supports that confidence.
-- Never copy symptoms from previous scans.
-- Never copy symptoms from UI defaults.
+- Never copy symptoms from previous scans or UI defaults.
 - User-selected symptoms are context only.
-- AI-observed symptoms must come from the image.
+- AI-observed symptoms must come directly from the image.
 - If evidence is insufficient, return unknown.
 - If image is not a plant image, return invalid_image and set is_plant = false.
 - If image quality is insufficient, return low_quality.
 - If multiple diseases are plausible, return the most likely diagnosis and clearly indicate uncertainty.
-- Confidence must represent visual evidence, not certainty invented by the model.
+- CONFIDENCE MUST BE A REALISTIC DECIMAL VALUE BETWEEN 0.0 AND 1.0 (e.g., 0.88 = 88% confidence, 0.78 = 78%, 0.63 = 63%, 0.42 = 42%) representing genuine visual evidence certainty. Do not invent fake certainty.
 
 Inspect:
 - leaf color, chlorosis, necrosis, spots, lesions, pustules, streaks, rings, margins
@@ -43,49 +42,56 @@ Return structured JSON only using this EXACT schema:
 {
   "status": "success | invalid_image | low_quality | analysis_unavailable",
   "is_plant": true,
-  "crop": {
-    "name": "string",
-    "confidence": 0
-  },
-  "diagnosis": {
-    "type": "disease | pest | nutrient_deficiency | healthy | physical_damage | unknown",
-    "name": "string",
-    "confidence": 0
-  },
+  "crop": "Wheat",
+  "crop_confidence": 0.92,
+  "diagnosis": "Yellow Rust (Stripe Rust)",
+  "diagnosis_type": "disease | pest | nutrient_deficiency | healthy | physical_damage | unknown",
   "pathogen": "scientific name or N/A",
+  "confidence": 0.88,
+  "severity": "low | medium | high | critical | unknown",
   "symptoms": [
     "Only symptoms visibly observed on foliage in the image"
   ],
-  "visual_evidence": [
+  "visualEvidence": [
     "Specific visual markers observed in the image"
   ],
-  "recommendations": [
+  "recommendedActions": [
     "Actionable management and treatment recommendations"
   ],
-  "severity": "low | medium | high | critical | unknown",
   "needs_expert_review": true,
-  "explanation": "Brief visual pathology rationale"
+  "reasoning": "Brief visual pathology rationale"
 }`;
 
 export interface RawVisionResponse {
   status: 'success' | 'invalid_image' | 'low_quality' | 'analysis_unavailable';
   is_plant?: boolean;
-  crop: {
+  isPlant?: boolean;
+  crop?: string | {
     name: string;
-    confidence: number;
+    confidence?: number | string;
   };
-  diagnosis: {
-    type: 'disease' | 'pest' | 'nutrient_deficiency' | 'healthy' | 'physical_damage' | 'unknown';
+  crop_confidence?: number | string;
+  diagnosis?: string | {
+    type?: 'disease' | 'pest' | 'nutrient_deficiency' | 'healthy' | 'physical_damage' | 'unknown';
     name: string;
-    confidence: number;
+    confidence?: number | string;
+    scientific_name?: string;
+    severity?: string;
   };
+  diagnosis_type?: string;
   pathogen?: string;
+  confidence?: number | string;
+  confidenceScore?: number;
+  confidence_score?: number;
   symptoms: string[];
-  visual_evidence: string[];
+  visualEvidence?: string[];
+  visual_evidence?: string[];
+  recommendedActions?: string[];
   recommendations?: string[];
   severity: 'low' | 'medium' | 'high' | 'critical' | 'unknown';
   needs_expert_review: boolean;
-  explanation: string;
+  reasoning?: string;
+  explanation?: string;
   scientific_name?: string;
   recommended_treatments?: {
     organic?: string[];
@@ -386,17 +392,33 @@ export class CropDiseaseVisionService {
       );
     }
 
-    const isPlant = raw.is_plant !== false;
-    const cropName = raw.crop?.name || request.cropName || 'Identified Plant';
-    const cropConfidence = typeof raw.crop?.confidence === 'number' ? Math.round(raw.crop.confidence) : 80;
-    const diagnosisName = raw.diagnosis?.name || (isPlant ? 'Unspecified Condition' : 'Non-Plant Specimen');
-    const diagnosisConfidence = typeof raw.diagnosis?.confidence === 'number' ? Math.round(raw.diagnosis.confidence) : 60;
-    const diagnosisType = (raw.diagnosis?.type || (isPlant ? 'disease' : 'unknown')) as DiagnosticType;
-    const pathogen = raw.pathogen || raw.scientific_name || '';
+    const isPlant = (raw as any).is_plant !== false && (raw as any).isPlant !== false;
+    const cropName = typeof raw.crop === 'string' ? raw.crop : (raw.crop?.name || request.cropName || 'Identified Plant');
+    const diagnosisName = typeof raw.diagnosis === 'string' ? raw.diagnosis : (raw.diagnosis?.name || (isPlant ? 'Unspecified Condition' : 'Non-Plant Specimen'));
+    const diagnosisType = ((raw as any).diagnosis_type || (typeof raw.diagnosis === 'object' ? raw.diagnosis?.type : undefined) || (diagnosisName.toLowerCase().includes('healthy') ? 'healthy' : isPlant ? 'disease' : 'unknown')) as DiagnosticType;
+    const pathogen = raw.pathogen || raw.scientific_name || (typeof raw.diagnosis === 'object' ? raw.diagnosis?.scientific_name : '') || '';
+
+    // Extract raw confidence indicators from flat or nested responses
+    const rawDiagConf = (raw as any).confidence ?? (typeof raw.diagnosis === 'object' ? raw.diagnosis?.confidence : undefined) ?? (raw as any).confidenceScore ?? (raw as any).confidence_score;
+    const rawCropConf = (raw as any).crop_confidence ?? (typeof raw.crop === 'object' ? raw.crop?.confidence : undefined) ?? rawDiagConf;
+
+    // Temporary Debug Logging per requirement 10
+    logger.info(`[GEMINI RAW CONFIDENCE] rawDiagConf=${JSON.stringify(rawDiagConf)}, rawCropConf=${JSON.stringify(rawCropConf)}`);
+
+    // Standardize through centralized normalization layer
+    const normalizedDiagDecimal = normalizeConfidenceDecimal(rawDiagConf);
+    const normalizedCropDecimal = normalizeConfidenceDecimal(rawCropConf);
+
+    // Convert decimal to integer percentage [0, 100] for confidenceScore
+    const diagnosisConfidenceScore = confidenceToScorePercentage(normalizedDiagDecimal, 0);
+    const cropConfidenceScore = confidenceToScorePercentage(normalizedCropDecimal, diagnosisConfidenceScore || 0);
+
+    // Temporary Debug Logging per requirement 10
+    logger.info(`[NORMALIZED CONFIDENCE] decimal=${normalizedDiagDecimal}, score=${diagnosisConfidenceScore}%`);
 
     // Severity mapping
     let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'MEDIUM';
-    const sev = (raw.severity || '').toLowerCase();
+    const sev = (raw.severity || (typeof raw.diagnosis === 'object' ? raw.diagnosis?.severity : '') || '').toLowerCase();
     if (sev === 'critical') riskLevel = 'CRITICAL';
     else if (sev === 'high') riskLevel = 'HIGH';
     else if (sev === 'low' || diagnosisType === 'healthy') riskLevel = 'LOW';
@@ -413,15 +435,15 @@ export class CropDiseaseVisionService {
       ? raw.symptoms
       : ['Leaf visual morphology inspected by AI'];
 
-    const visualEvidence = Array.isArray(raw.visual_evidence) ? raw.visual_evidence : [];
+    const visualEvidence = (raw as any).visualEvidence || raw.visual_evidence || [];
 
     // Recommendations
-    const recommendations = Array.isArray(raw.recommendations) && raw.recommendations.length > 0
-      ? raw.recommendations
-      : [
-          'Review IPM 6-pillar advisory and formulate response.',
-          'Re-inspect foliage in 3-5 days to monitor recovery.'
-        ];
+    const recommendations = (raw as any).recommendedActions || raw.recommendations || [
+      'Review IPM 6-pillar advisory and formulate response.',
+      'Re-inspect foliage in 3-5 days to monitor recovery.'
+    ];
+
+    const explanation = raw.reasoning || raw.explanation || `Visual analysis completed for ${cropName} foliage.`;
 
     // Formulate 6-pillar IPM & action matrix dynamically based on visual evidence
     const ipmAdvisory = this.generateDynamicIPMAdvisory(cropName, diagnosisName, diagnosisType, riskLevel, raw);
@@ -433,15 +455,15 @@ export class CropDiseaseVisionService {
       crop: cropName,
       disease: diagnosisName,
       pathogen,
-      confidence: diagnosisConfidence,
+      confidence: normalizedDiagDecimal ?? 0,
       severity: riskLevel.toLowerCase(),
       symptoms: observedSymptoms,
       recommendations,
-      reasoning: raw.explanation || `Visual analysis completed for ${cropName} foliage.`,
+      reasoning: explanation,
 
       cropName,
       suspectedIssue: diagnosisName,
-      confidenceScore: diagnosisConfidence,
+      confidenceScore: diagnosisConfidenceScore,
       scientificName: pathogen || raw.scientific_name,
       riskLevel,
       diagnosisType,
@@ -477,7 +499,7 @@ export class CropDiseaseVisionService {
       ],
       detectedCrop: {
         name: cropName,
-        confidence: cropConfidence,
+        confidence: cropConfidenceScore,
         matchedUserSelection,
       },
       visualEvidence,

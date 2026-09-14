@@ -185,13 +185,12 @@ export const WeatherPage: React.FC = () => {
     async (params: { lat: number; lon: number; district: string; state: string; locationName: string }) => {
       setLoading(true);
       try {
-        const fullLocationName = `${params.locationName}, ${params.district}, ${params.state}`;
         const res = await weatherApi.getWeather({
           lat: params.lat,
           lon: params.lon,
           district: params.district,
           state: params.state,
-          locationName: fullLocationName,
+          locationName: params.locationName,
         });
 
         if (res && res.sourceStatus !== 'UNAVAILABLE') {
@@ -205,7 +204,7 @@ export const WeatherPage: React.FC = () => {
             longitude: params.lon,
             district: params.district,
             state: params.state,
-            formattedAddress: fullLocationName,
+            formattedAddress: `${params.locationName}, ${params.district}, ${params.state}`,
           });
           setWeatherData(fallback);
         }
@@ -640,15 +639,18 @@ export const WeatherPage: React.FC = () => {
             The Open-Meteo meteorological feed is temporarily unreachable for {selectedLocationName}, {selectedDistrict}. No simulated or fake data is displayed.
           </p>
           <button
-            onClick={() =>
+            onClick={() => {
+              const matched = availableLocationOptions.find((opt) => opt.key === selectedOptionKey);
+              const targetLat = matched ? matched.lat : currentDistrictObj.lat;
+              const targetLon = matched ? matched.lon : currentDistrictObj.lon;
               fetchWeather({
-                lat: currentDistrictObj.lat,
-                lon: currentDistrictObj.lon,
+                lat: targetLat,
+                lon: targetLon,
                 district: selectedDistrict,
                 state: selectedState,
                 locationName: selectedLocationName,
-              })
-            }
+              });
+            }}
             className="btn btn-primary"
             style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 22px', fontSize: '0.9rem', fontWeight: '800' }}
           >

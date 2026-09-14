@@ -381,7 +381,34 @@ export const DiseaseDetectionPage: React.FC = () => {
   const completeDiagnosis = async (res: DiagnosticResult) => {
     setIsScanning(false);
     
-    const effectiveConfidence = res.confidenceScore;
+    // Normalize confidence from API response (support decimal 0-1 or percentage 0-100)
+    let effectiveConfidence = 0;
+    const rawConf = res.confidence !== undefined && res.confidence !== null 
+      ? res.confidence 
+      : res.confidenceScore;
+
+    if (typeof rawConf === 'number' && !isNaN(rawConf)) {
+      if (rawConf > 0 && rawConf <= 1) {
+        effectiveConfidence = Math.round(rawConf * 100);
+      } else if (rawConf > 1 && rawConf <= 100) {
+        effectiveConfidence = Math.round(rawConf);
+      }
+    } else if (typeof rawConf === 'string') {
+      const trimmed = (rawConf as string).trim().replace('%', '');
+      const parsed = parseFloat(trimmed);
+      if (!isNaN(parsed)) {
+        effectiveConfidence = parsed > 0 && parsed <= 1 ? Math.round(parsed * 100) : Math.min(100, Math.max(0, Math.round(parsed)));
+      }
+    }
+
+    // Temporary Debug Logging per requirement 10
+    console.log('[FRONTEND DISPLAY CONFIDENCE]', {
+      rawConfidence: res.confidence,
+      rawConfidenceScore: res.confidenceScore,
+      effectiveConfidence,
+      cropName: res.cropName,
+      suspectedIssue: res.suspectedIssue,
+    });
 
     const modifiedRes: DiagnosticResult = {
       ...res,

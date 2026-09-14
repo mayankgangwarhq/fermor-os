@@ -3,6 +3,7 @@ import { DiseaseDetectionService } from '../services/diseaseDetection.service';
 import { CropDiseaseVisionService } from '../services/cropDiseaseVision.service';
 import { sendSuccess, sendCreated } from '../utils/apiResponse';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { logger } from '../utils/logger';
 
 export class DiseaseController {
   public static async getDiseases(req: Request, res: Response, next: NextFunction) {
@@ -29,6 +30,7 @@ export class DiseaseController {
       const farmerId = req.user?.id || req.body.farmerId;
       const farmId = req.body.farmId;
       const diagnosis = await CropDiseaseVisionService.analyzeImage(req.body, farmerId, farmId);
+      logger.info(`[API RESPONSE CONFIDENCE] id=${diagnosis.id}, crop=${diagnosis.cropName}, issue="${diagnosis.suspectedIssue}", decimal=${diagnosis.confidence}, score=${diagnosis.confidenceScore}%`);
       return sendSuccess(res, diagnosis, 'Diagnostic analysis completed successfully');
     } catch (error) {
       next(error);
