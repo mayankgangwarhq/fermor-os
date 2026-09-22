@@ -551,10 +551,8 @@ export class DiseaseDetectionService {
     apiKey: string
   ): Promise<IDiagnosisResult | null> {
     const candidateModels = [
-      config.geminiModel,
+      config.geminiModel || 'gemini-2.5-flash',
       'gemini-2.5-flash',
-      'gemini-3.6-flash',
-      'gemini-3.7-flash',
     ].filter(Boolean) as string[];
 
     const modelsToTry = Array.from(new Set(candidateModels));

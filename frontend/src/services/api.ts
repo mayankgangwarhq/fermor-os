@@ -16,7 +16,7 @@ import type {
   MandiFilterOptions,
 } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api');
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -463,7 +463,7 @@ export const assistantApi = {
     conversationHistory?: any[];
     imageBase64?: string;
   }) => {
-    const res = await apiClient.post('/assistant/query', payload);
+    const res = await apiClient.post('/assistant/query', payload, { timeout: 45000 });
     return res.data?.data;
   },
 };

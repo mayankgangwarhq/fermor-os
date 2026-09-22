@@ -496,7 +496,7 @@ export interface AIStructuredResponse {
   understanding: string;
   information: string;
   nextSteps: string[];
-  sourceStatus: 'LIVE API' | 'VERIFIED DB' | 'AI GUIDANCE' | 'DEMO DATA' | 'LIVE GEMINI API' | 'VERIFIED GOVT DB';
+  sourceStatus: 'LIVE API' | 'VERIFIED DB' | 'AI GUIDANCE' | 'DEMO DATA' | 'LIVE GEMINI API' | 'VERIFIED GOVT DB' | 'AI SERVICE UNAVAILABLE' | string;
   diseaseCard?: AIDiseaseCardPayload;
   pestCard?: AIPestCardPayload;
   weatherCard?: AIWeatherCardPayload;

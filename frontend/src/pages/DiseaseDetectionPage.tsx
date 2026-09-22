@@ -1326,7 +1326,7 @@ export const DiseaseDetectionPage: React.FC = () => {
           {/* Quick Demo Test Presets */}
           <div>
             <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
-              ⚡ {t('quickTestPresets', 'Quick Test Presets')} ({t('sampleLabel', 'SAMPLE')}):
+              ⚡ {t('quickTestPresets', 'Quick Test Presets')} [DEMO / TEST SPECIMENS ONLY]:
             </span>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               {QUICK_PRESETS.map((pr, i) => (

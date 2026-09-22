@@ -132,9 +132,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
     <div style={{ marginBottom: '16px' }}>
       <div
         style={{
-          fontSize: '0.68rem',
+          fontSize: 'var(--fs-xs)',
           fontWeight: '800',
-          color: isDark ? '#64748b' : '#94a3b8',
+          color: isDark ? '#94a3b8' : '#64748b',
           textTransform: 'uppercase',
           padding: '4px 12px 6px',
           letterSpacing: '0.06em',
@@ -167,7 +167,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '9px 12px',
-                borderRadius: '12px',
+                borderRadius: 'var(--radius-md)',
                 border: 'none',
                 backgroundColor: isActive
                   ? (isDark ? 'rgba(16, 185, 129, 0.18)' : '#ecfdf5')
@@ -176,7 +176,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
                   ? (isDark ? '#34d399' : '#065f46')
                   : (isDark ? '#cbd5e1' : '#475569'),
                 fontWeight: isActive ? '800' : '600',
-                fontSize: '0.86rem',
+                fontSize: 'var(--fs-sm)',
                 cursor: 'pointer',
                 textAlign: 'left',
                 transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -204,15 +204,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 {item.badge && (
                   <span
-                    style={{
-                      fontSize: '0.65rem',
-                      fontWeight: 800,
-                      padding: '2px 7px',
-                      borderRadius: '999px',
-                      backgroundColor: isActive ? '#10b981' : (isDark ? '#1e293b' : '#e0f2fe'),
-                      color: isActive ? '#ffffff' : (isDark ? '#38bdf8' : '#0369a1'),
-                      border: isActive ? 'none' : (isDark ? '1px solid #334155' : '1px solid #bae6fd'),
-                    }}
+                    className={item.badge === 'NEW' ? 'nav-badge nav-badge-accent' : 'nav-badge'}
                   >
                     {item.badge}
                   </span>
@@ -220,10 +212,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
                 {item.count && item.count > 0 ? (
                   <span
                     style={{
-                      fontSize: '0.68rem',
+                      fontSize: 'var(--fs-xs)',
                       fontWeight: 800,
                       padding: '1px 6px',
-                      borderRadius: '999px',
+                      borderRadius: 'var(--radius-pill)',
                       backgroundColor: '#ef4444',
                       color: '#ffffff',
                     }}
@@ -258,32 +250,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
       }}
     >
       <div>
-        {/* Flagship Quick Scan CTA */}
+        {/* Flagship Quick Scan CTA (Unified Issue 12) */}
         <div style={{ marginBottom: '18px', padding: '0 2px' }}>
           <button
             onClick={() => onNavigate('disease')}
-            className="btn"
+            className="scan-crop-btn"
             style={{
               width: '100%',
-              padding: '11px 14px',
-              borderRadius: '14px',
-              background: 'linear-gradient(135deg, #047857 0%, #059669 50%, #10b981 100%)',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
               justifyContent: 'space-between',
-              boxShadow: '0 4px 14px rgba(5, 150, 105, 0.35)',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 6px 18px rgba(5, 150, 105, 0.45)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 14px rgba(5, 150, 105, 0.35)';
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -300,7 +274,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
               >
                 <Scan size={16} color="#ffffff" />
               </div>
-              <span style={{ fontSize: '0.88rem', fontWeight: 800 }}>
+              <span>
                 {t('scanCrop', 'Scan My Crop')}
               </span>
             </div>

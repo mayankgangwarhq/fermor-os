@@ -334,43 +334,48 @@ export class AIService {
     const liveContext = await this.buildLiveContext(params);
     const apiKey = config.geminiApiKey;
 
-    if (apiKey && apiKey.trim() !== '') {
-      try {
-        const geminiResult = await this.callGeminiAPI(params, liveContext, apiKey);
-        if (geminiResult) {
-          return geminiResult;
-        }
-      } catch (err: any) {
-        logger.warn(`[AIService] Gemini API call failed (${err.message}). Falling back to internal engine.`);
-      }
+    if (!apiKey || apiKey.trim() === '') {
+      logger.error('[AIService] GEMINI_API_KEY is missing on server.');
+      throw new Error('AI Assistant is unavailable: GEMINI_API_KEY is not configured on the backend.');
     }
 
-    // Fallback heuristic engine using real verified database knowledge
-    return this.fallbackIntelligence(params);
+    try {
+      const geminiResult = await this.callGeminiAPI(params, liveContext, apiKey);
+      if (geminiResult) {
+        return geminiResult;
+      }
+    } catch (err: any) {
+      logger.error(`[AIService] Gemini API call failed: ${err.message}`);
+      throw new Error(`AI service temporarily unavailable: ${err.message}`);
+    }
+
+    throw new Error('AI service failed to generate a response. Please try again.');
   }
 
   /**
    * Calls Google AI Studio Gemini REST API directly.
    */
   private static async callGeminiAPI(params: AssistantQueryParams, liveContext: string, apiKey: string) {
-    const candidateModels = [config.geminiModel, 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash'].filter(Boolean) as string[];
+    const candidateModels = [config.geminiModel || 'gemini-2.5-flash', 'gemini-2.5-flash'].filter(Boolean) as string[];
     // Remove duplicates
     const modelsToTry = Array.from(new Set(candidateModels));
 
     const contents: any[] = [];
 
-    // Multi-turn history if provided
+    // Multi-turn history if provided (limit to last 10 turns to avoid token overflow)
     if (params.conversationHistory && params.conversationHistory.length > 0) {
-      for (const msg of params.conversationHistory) {
+      const recentHistory = params.conversationHistory.slice(-10);
+      for (const msg of recentHistory) {
         contents.push({
           role: msg.role === 'user' ? 'user' : 'model',
-          parts: [{ text: msg.content }],
+          parts: [{ text: (msg.content || '').substring(0, 2000) }],
         });
       }
     }
 
+    const cleanQuery = (params.query || '').substring(0, 3000);
     const currentParts: any[] = [
-      { text: `${liveContext}\n\nFarmer Query: ${params.query}\nLanguage Preference: ${params.language || 'auto'}` },
+      { text: `${liveContext}\n\nFarmer Query: ${cleanQuery}\nLanguage Preference: ${params.language || 'auto'}` },
     ];
 
     if (params.imageBase64) {
@@ -410,11 +415,12 @@ export class AIService {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(18000),
         });
 
         if (!response.ok) {
           const errorText = await response.text();
-          throw new Error(`Gemini API model ${model} error ${response.status}: ${errorText}`);
+          throw new Error(`Gemini API model ${model} error ${response.status}: ${errorText.substring(0, 200)}`);
         }
 
         const json = await response.json();

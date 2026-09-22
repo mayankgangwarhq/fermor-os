@@ -32,11 +32,11 @@ export const config = {
   weatherApiKey: process.env.WEATHER_API_KEY || '',
   aiInferenceServiceUrl: process.env.AI_INFERENCE_SERVICE_URL || '',
   geminiApiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '',
-  geminiModel: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
+  geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
   // Dedicated Crop Disease Vision Engine
   cropDiseaseProvider: process.env.CROP_DISEASE_PROVIDER || 'gemini',
   cropDiseaseApiKey: process.env.CROP_DISEASE_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '',
-  cropDiseaseModel: process.env.CROP_DISEASE_MODEL || 'gemini-3.5-flash',
+  cropDiseaseModel: process.env.CROP_DISEASE_MODEL || 'gemini-2.5-flash',
   // Mandi Rates Configuration (Auto-enables data_gov when DATA_GOV_API_KEY is present, with DEMO fallback)
   mandiProvider: process.env.MANDI_PROVIDER || (process.env.DATA_GOV_API_KEY ? 'data_gov' : 'demo'),
   dataGovApiKey: process.env.DATA_GOV_API_KEY || '',

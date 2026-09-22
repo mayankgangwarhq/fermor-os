@@ -9,13 +9,34 @@ export class AssistantController {
       const { query, language, farmContext, conversationHistory, imageBase64 } = req.body;
       const userId = req.user?.id;
 
+      if (!query && !imageBase64) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'A query string or specimen image is required.',
+          },
+        });
+      }
+
+      // Bound query length to max 3000 characters
+      const boundedQuery = typeof query === 'string' ? query.substring(0, 3000) : '';
+
+      // Bound conversation history to last 10 turns
+      const boundedHistory: Array<{ role: 'user' | 'model'; content: string }> = Array.isArray(conversationHistory)
+        ? conversationHistory.slice(-10).map((item) => ({
+            role: item.role === 'model' ? ('model' as const) : ('user' as const),
+            content: typeof item.content === 'string' ? item.content.substring(0, 2000) : '',
+          }))
+        : [];
+
       const params: AssistantQueryParams = {
-        query: query || '',
+        query: boundedQuery,
         language: language || 'en',
         userId,
         farmContext,
-        conversationHistory,
-        imageBase64,
+        conversationHistory: boundedHistory,
+        imageBase64: typeof imageBase64 === 'string' && imageBase64.length < 15000000 ? imageBase64 : undefined,
       };
 
       const result = await AIService.processQuery(params);

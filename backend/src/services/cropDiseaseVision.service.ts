@@ -120,7 +120,7 @@ export class GeminiCropDiseaseProvider implements CropDiseaseVisionProvider {
 
   constructor() {
     this.apiKey = config.cropDiseaseApiKey;
-    this.model = config.cropDiseaseModel || 'gemini-3.5-flash';
+    this.model = config.cropDiseaseModel || 'gemini-2.5-flash';
   }
 
   public async analyzeLeafImage(params: {
@@ -147,11 +147,8 @@ export class GeminiCropDiseaseProvider implements CropDiseaseVisionProvider {
 
     const candidateModels = Array.from(new Set([
       this.model,
-      'gemini-3.1-flash-lite',
-      'gemini-3.7-flash',
-      'gemini-3.5-flash-lite',
-      'gemini-3.5-flash',
-    ]));
+      'gemini-2.5-flash',
+    ].filter(Boolean)));
 
     let lastError = 'Vision inference failed';
     let lastStatus = 500;
@@ -202,6 +199,7 @@ Examine the uploaded leaf image in detail according to your system instructions.
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(requestBody),
+          signal: AbortSignal.timeout(20000),
         });
 
         if (!response.ok) {

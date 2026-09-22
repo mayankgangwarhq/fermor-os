@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AssistantController } from '../controllers/assistant.controller';
 import { optionalAuth } from '../middleware/auth.middleware';
+import { aiChatbotRateLimiter } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 
@@ -15,6 +16,6 @@ router.get(['/', '/query'], (_req, res) => {
 });
 
 // POST /api/assistant/query
-router.post('/query', optionalAuth, AssistantController.query);
+router.post('/query', aiChatbotRateLimiter, optionalAuth, AssistantController.query);
 
 export const assistantRoutes = router;

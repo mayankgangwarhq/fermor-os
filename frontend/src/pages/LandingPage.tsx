@@ -302,8 +302,8 @@ export const LandingPage: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          {/* LEFT SIDE: Hero Value Proposition */}
-          <div>
+          {/* LEFT SIDE: Hero Value Proposition (Issue 17: Dominant Primary Focal Point) */}
+          <div className="hero-content">
             {/* Live Precision AI Tag */}
             <div
               style={{
@@ -313,10 +313,10 @@ export const LandingPage: React.FC = () => {
                 backgroundColor: '#DCFCE7',
                 border: '1.5px solid #86efac',
                 padding: '6px 18px',
-                borderRadius: '999px',
+                borderRadius: 'var(--radius-pill)',
                 color: '#14532D',
                 fontWeight: 800,
-                fontSize: '0.84rem',
+                fontSize: 'var(--fs-sm)',
                 marginBottom: '20px',
                 boxShadow: '0 2px 8px rgba(22, 163, 74, 0.12)',
               }}
@@ -328,7 +328,7 @@ export const LandingPage: React.FC = () => {
             {/* Main Headline */}
             <h1
               style={{
-                fontSize: 'clamp(2.4rem, 4.5vw, 3.8rem)',
+                fontSize: 'var(--fs-hero)',
                 fontWeight: 900,
                 color: '#14532D',
                 lineHeight: 1.12,
@@ -342,7 +342,7 @@ export const LandingPage: React.FC = () => {
             {/* Subtext */}
             <p
               style={{
-                fontSize: '1.18rem',
+                fontSize: 'var(--fs-lg)',
                 color: '#334155',
                 maxWidth: '580px',
                 marginBottom: '36px',
@@ -359,11 +359,13 @@ export const LandingPage: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
               <button
                 onClick={() => handleProtectedNavigate('/disease-detection')}
+                className="btn btn-primary"
                 style={{
+                  minHeight: '48px',
                   padding: '14px 34px',
-                  fontSize: '1.05rem',
+                  fontSize: 'var(--fs-md)',
                   fontWeight: 800,
-                  borderRadius: '14px',
+                  borderRadius: 'var(--radius-md)',
                   backgroundColor: '#14532D',
                   color: '#ffffff',
                   border: 'none',
@@ -382,11 +384,13 @@ export const LandingPage: React.FC = () => {
 
               <button
                 onClick={() => handleProtectedNavigate('/ai')}
+                className="btn btn-outline"
                 style={{
+                  minHeight: '48px',
                   padding: '14px 28px',
-                  fontSize: '1.05rem',
+                  fontSize: 'var(--fs-md)',
                   fontWeight: 800,
-                  borderRadius: '14px',
+                  borderRadius: 'var(--radius-md)',
                   backgroundColor: '#FFFFFF',
                   color: '#14532D',
                   border: '2px solid #16A34A',
@@ -415,24 +419,24 @@ export const LandingPage: React.FC = () => {
               }}
             >
               <div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#16A34A' }}>94%+</div>
-                <div style={{ fontSize: '0.78rem', color: '#14532D', fontWeight: 700 }}>AI Vision Accuracy</div>
+                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 900, color: '#16A34A' }}>94%+</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: '#14532D', fontWeight: 700 }}>AI Vision Accuracy</div>
               </div>
               <div style={{ width: '1px', height: '30px', backgroundColor: '#DCFCE7' }} />
               <div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#14532D' }}>Day 0 → 3 → 7</div>
-                <div style={{ fontSize: '0.78rem', color: '#14532D', fontWeight: 700 }}>Continuous Follow-Up</div>
+                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 900, color: '#14532D' }}>Day 0 → 3 → 7</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: '#14532D', fontWeight: 700 }}>Continuous Follow-Up</div>
               </div>
               <div style={{ width: '1px', height: '30px', backgroundColor: '#DCFCE7' }} />
               <div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#EAB308' }}>17 Languages</div>
-                <div style={{ fontSize: '0.78rem', color: '#14532D', fontWeight: 700 }}>Full Voice & Text</div>
+                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 900, color: '#EAB308' }}>17 Languages</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: '#14532D', fontWeight: 700 }}>Full Voice & Text</div>
               </div>
             </div>
           </div>
 
-          {/* RIGHT SIDE: LIVE AI WORKFLOW INTERACTIVE VISUALIZER */}
-          <div style={{ position: 'relative' }}>
+          {/* RIGHT SIDE: LIVE AI WORKFLOW INTERACTIVE VISUALIZER (Issue 17: Secondary Supporting Card) */}
+          <div className="hero-workflow" style={{ position: 'relative' }}>
             
             {/* Ambient Background Glow */}
             <div
@@ -440,7 +444,7 @@ export const LandingPage: React.FC = () => {
                 position: 'absolute',
                 inset: '-10px',
                 background: 'linear-gradient(135deg, rgba(22,163,74,0.15) 0%, rgba(234,179,8,0.1) 100%)',
-                borderRadius: '32px',
+                borderRadius: 'var(--radius-xl)',
                 filter: 'blur(20px)',
                 zIndex: 0,
               }}
@@ -452,14 +456,14 @@ export const LandingPage: React.FC = () => {
                 position: 'relative',
                 zIndex: 1,
                 backgroundColor: '#ffffff',
-                borderRadius: '26px',
+                borderRadius: 'var(--radius-xl)',
                 border: '2px solid #86efac',
                 boxShadow: '0 20px 50px rgba(20,83,45,0.15)',
                 overflow: 'hidden',
                 padding: '24px',
               }}
             >
-              {/* Header: Live Workflow Controller */}
+              {/* Header: Live Workflow Controller (Issue 18: Hit Areas) */}
               <div
                 style={{
                   display: 'flex',
@@ -480,37 +484,26 @@ export const LandingPage: React.FC = () => {
                       boxShadow: '0 0 10px #16A34A',
                     }}
                   />
-                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#14532D', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 800, color: '#14532D', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     {isHindi ? 'लाइव AI वर्कफ़्लो सिमुलेशन' : 'Live AI Crop Workflow'}
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button
                     onClick={() => setIsHeroPlaying(!isHeroPlaying)}
-                    style={{
-                      border: 'none',
-                      backgroundColor: '#f1f5f9',
-                      padding: '4px 10px',
-                      borderRadius: '8px',
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
-                      color: '#475569',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}
+                    className="workflow-control"
+                    aria-label={isHeroPlaying ? 'Pause workflow simulation' : 'Play workflow simulation'}
                   >
                     {isHeroPlaying ? '⏸ Pause' : '▶ Play'}
                   </button>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#16A34A', backgroundColor: '#DCFCE7', padding: '3px 8px', borderRadius: '6px' }}>
+                  <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 800, color: '#16A34A', backgroundColor: '#DCFCE7', padding: '4px 8px', borderRadius: 'var(--radius-sm)' }}>
                     Step {heroStage + 1} / 6
                   </span>
                 </div>
               </div>
 
-              {/* 6-Step Compact Progression Tabs */}
+              {/* 6-Step Compact Progression Tabs (Issue 18: Standard 40x40px Hit Targets) */}
               <div
                 style={{
                   display: 'grid',
@@ -529,23 +522,18 @@ export const LandingPage: React.FC = () => {
                         setHeroStage(idx);
                         setIsHeroPlaying(false);
                       }}
+                      className="workflow-step-button"
                       style={{
-                        padding: '8px 4px',
-                        borderRadius: '10px',
                         border: isActive ? '2px solid #16A34A' : '1px solid #e2e8f0',
                         backgroundColor: isActive ? step.bgColor : '#f8fafc',
                         color: isActive ? step.color : '#64748b',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '4px',
-                        transition: 'all 0.2s ease',
+                        gap: '2px',
                       }}
                       title={step.title}
+                      aria-label={step.title}
                     >
                       <StepIcon size={16} />
-                      <span style={{ fontSize: '0.65rem', fontWeight: 800 }}>
+                      <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 800 }}>
                         0{idx + 1}
                       </span>
                     </button>
@@ -560,7 +548,7 @@ export const LandingPage: React.FC = () => {
                 return (
                   <div
                     style={{
-                      borderRadius: '18px',
+                      borderRadius: 'var(--radius-lg)',
                       backgroundColor: '#f8fafc',
                       border: '1.5px solid #e2e8f0',
                       overflow: 'hidden',
@@ -587,7 +575,7 @@ export const LandingPage: React.FC = () => {
                           backgroundColor: 'rgba(255,255,255,0.95)',
                           backdropFilter: 'blur(8px)',
                           padding: '6px 12px',
-                          borderRadius: '10px',
+                          borderRadius: 'var(--radius-sm)',
                           border: `1.5px solid ${cur.color}`,
                           boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                           display: 'flex',
@@ -596,7 +584,7 @@ export const LandingPage: React.FC = () => {
                         }}
                       >
                         <CurIcon size={16} color={cur.color} />
-                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0f172a' }}>
+                        <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 900, color: '#0f172a' }}>
                           {cur.badge}
                         </span>
                       </div>
@@ -612,8 +600,8 @@ export const LandingPage: React.FC = () => {
                           backdropFilter: 'blur(6px)',
                           color: '#ffffff',
                           padding: '8px 12px',
-                          borderRadius: '10px',
-                          fontSize: '0.78rem',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: 'var(--fs-xs)',
                           fontWeight: 600,
                           display: 'flex',
                           alignItems: 'center',
@@ -625,17 +613,17 @@ export const LandingPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Step Description Bar */}
+                    {/* Step Description Bar (Issue 11: Semantic H2 with farm-photo-title class, Issue 7: workflow-stage) */}
                     <div style={{ padding: '16px', backgroundColor: '#ffffff' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#14532D', margin: 0 }}>
+                        <h2 className="farm-photo-title">
                           {cur.title}
-                        </h3>
-                        <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
+                        </h2>
+                        <span className="workflow-stage">
                           Workflow Stage {heroStage + 1} of 6
                         </span>
                       </div>
-                      <p style={{ fontSize: '0.88rem', color: '#475569', margin: 0, lineHeight: 1.5 }}>
+                      <p style={{ fontSize: 'var(--fs-sm)', color: '#475569', margin: 0, lineHeight: 1.5 }}>
                         {cur.desc}
                       </p>
                     </div>
@@ -654,24 +642,24 @@ export const LandingPage: React.FC = () => {
                   borderTop: '1px solid #f1f5f9',
                 }}
               >
-                <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                <div style={{ fontSize: 'var(--fs-xs)', color: '#64748b', fontWeight: 600 }}>
                   {isHindi ? '🔄 सतत ऑटो-मॉनिटरिंग सक्रिय' : '🔄 Continuous Autonomous Cycle'}
                 </div>
                 <button
                   onClick={() => setHeroStage((prev) => (prev + 1) % 6)}
+                  className="btn btn-secondary"
                   style={{
-                    border: 'none',
-                    backgroundColor: '#DCFCE7',
-                    color: '#14532D',
+                    minHeight: '36px',
                     padding: '6px 14px',
-                    borderRadius: '8px',
-                    fontSize: '0.78rem',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: 'var(--fs-xs)',
                     fontWeight: 800,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
                   }}
+                  aria-label="Advance to next workflow step"
                 >
                   <span>{isHindi ? 'अगला चरण देखें' : 'Next Step'}</span>
                   <ChevronRight size={14} />
@@ -1238,27 +1226,23 @@ export const LandingPage: React.FC = () => {
             })}
           </div>
 
-          {/* Central AI Processor Core Banner */}
+          {/* Central AI Processor Core Banner (Issues 8, 12, 19) */}
           <div
+            className="engine-bar"
             style={{
               backgroundColor: '#14532D',
               border: '2px solid #EAB308',
-              borderRadius: '20px',
+              borderRadius: 'var(--radius-xl)',
               padding: '24px 32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '20px',
               boxShadow: '0 12px 30px rgba(0,0,0,0.3)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', textAlign: 'left' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <div
                 style={{
                   width: '52px',
                   height: '52px',
-                  borderRadius: '14px',
+                  borderRadius: 'var(--radius-md)',
                   backgroundColor: '#EAB308',
                   color: '#14532D',
                   display: 'flex',
@@ -1267,15 +1251,17 @@ export const LandingPage: React.FC = () => {
                   fontWeight: 900,
                   fontSize: '1.5rem',
                   boxShadow: '0 4px 14px rgba(234, 179, 8, 0.4)',
+                  flexShrink: 0,
                 }}
               >
                 <Bot size={30} />
               </div>
-              <div>
-                <h4 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff', margin: 0 }}>
-                  AGRINEXT FARM INTELLIGENCE ENGINE
-                </h4>
-                <p style={{ fontSize: '0.86rem', color: '#dcfce7', margin: '2px 0 0 0' }}>
+              <div className="engine-copy">
+                {/* Issue 12: Semantic H3 & Issue 8: Title Case */}
+                <h3 style={{ fontSize: 'var(--fs-xl)', fontWeight: 900, color: '#ffffff', margin: 0 }}>
+                  AGRINEXT Farm Intelligence Engine
+                </h3>
+                <p style={{ fontSize: 'var(--fs-sm)', color: '#dcfce7', margin: 0, lineHeight: 1.5 }}>
                   {isHindi
                     ? 'सभी 7 स्रोतों को विश्लेषित कर किसान के लिए दैनिक कार्रवाई योग्य कार्य तैयार करता है।'
                     : 'Real-time synthesis powering accurate farm advisories, spray timing & risk mitigation.'}
@@ -1285,18 +1271,16 @@ export const LandingPage: React.FC = () => {
 
             <button
               onClick={() => handleProtectedNavigate('/dashboard')}
+              className="btn btn-primary explore-btn"
               style={{
                 backgroundColor: '#16A34A',
                 color: '#ffffff',
                 border: 'none',
+                minHeight: '44px',
                 padding: '12px 24px',
-                borderRadius: '12px',
+                borderRadius: 'var(--radius-md)',
                 fontWeight: 800,
-                fontSize: '0.92rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
+                fontSize: 'var(--fs-sm)',
                 boxShadow: '0 4px 14px rgba(22,163,74,0.3)',
               }}
             >
@@ -1444,14 +1428,15 @@ export const LandingPage: React.FC = () => {
                 <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#16A34A', textTransform: 'uppercase', marginBottom: '4px' }}>
                   Step {simStep + 1} of 5
                 </div>
-                <h4 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0f172a', marginBottom: '6px' }}>
+                {/* Issue 13: Semantic H3 under H2 */}
+                <h3 style={{ fontSize: 'var(--fs-xl)', fontWeight: 900, color: '#0f172a', marginBottom: '6px' }}>
                   {simStep === 0 && (isHindi ? '1. पत्ती की फोटो अपलोड करें' : '1. Upload Field Crop Imagery')}
                   {simStep === 1 && (isHindi ? '2. AGRINEXT AI न्यूरल स्कैन' : '2. Neural Vision Pathology Inference')}
                   {simStep === 2 && (isHindi ? '3. रोग: यलो रस्ट (92% सटीकता, उच्च जोखिम)' : '3. Disease: Yellow Rust (92% Conf., High Risk)')}
                   {simStep === 3 && (isHindi ? '4. अनुशंसित फोलियर स्प्रे + 24h वेदर विंडो' : '4. Recommended Foliar Protocol + 24h Spray Window')}
                   {simStep === 4 && (isHindi ? '5. Day 3 फॉलो-अप: 65% दृश्य रिकवरी सत्यापित' : '5. Day 3 Follow-Up: 65% Tissue Recovery Verified')}
-                </h4>
-                <p style={{ fontSize: '0.92rem', color: '#475569', margin: 0, lineHeight: 1.5 }}>
+                </h3>
+                <p style={{ fontSize: 'var(--fs-sm)', color: '#475569', margin: 0, lineHeight: 1.5 }}>
                   {simStep === 0 && (isHindi ? 'किसान खेत से सीधे स्मार्टफोन द्वारा पत्ती की तस्वीर अपलोड करता है।' : 'Capture leaves directly with your phone or select from existing crop gallery.')}
                   {simStep === 1 && (isHindi ? 'डीप लर्निंग मॉडल सूक्ष्म कवक व ऊतक क्षति के पैटर्न की पहचान करता है।' : 'Extracts visual cellular features and cross-references agronomic databases.')}
                   {simStep === 2 && (isHindi ? 'यलो रस्ट की पहचान और माइक्रॉक्लाइमेट डेटा के आधार पर फैलाव का जोखिम आंका जाता है।' : 'Confirms pathogen risk level and flags potential neighboring plot spread.')}
@@ -1465,11 +1450,11 @@ export const LandingPage: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <button
                 onClick={() => setSimStep(0)}
+                className="btn btn-ghost"
                 style={{
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  color: '#64748b',
-                  fontSize: '0.86rem',
+                  minHeight: '40px',
+                  padding: '6px 12px',
+                  fontSize: 'var(--fs-sm)',
                   fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
@@ -1483,14 +1468,16 @@ export const LandingPage: React.FC = () => {
 
               <button
                 onClick={handleSimNext}
+                className="btn btn-primary"
                 style={{
+                  minHeight: '44px',
                   backgroundColor: '#14532D',
                   color: '#ffffff',
                   border: 'none',
                   padding: '10px 24px',
-                  borderRadius: '12px',
+                  borderRadius: 'var(--radius-md)',
                   fontWeight: 800,
-                  fontSize: '0.92rem',
+                  fontSize: 'var(--fs-sm)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -1515,7 +1502,7 @@ export const LandingPage: React.FC = () => {
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
             <div
               style={{
-                fontSize: '0.82rem',
+                fontSize: 'var(--fs-xs)',
                 fontWeight: 800,
                 color: '#16A34A',
                 textTransform: 'uppercase',
@@ -1525,10 +1512,10 @@ export const LandingPage: React.FC = () => {
             >
               COMPARISON MATRIX
             </div>
-            <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: '#14532D', marginBottom: '12px' }}>
+            <h2 style={{ fontSize: 'var(--fs-2xl)', fontWeight: 900, color: '#14532D', marginBottom: '12px' }}>
               {isHindi ? 'पारंपरिक खेती बनाम AGRINEXT AI ऑपरेटिंग सिस्टम' : 'Traditional Farming vs AGRINEXT AI OS'}
             </h2>
-            <p style={{ color: '#475569', fontSize: '1.05rem', maxWidth: '640px', margin: '0 auto' }}>
+            <p style={{ color: '#475569', fontSize: 'var(--fs-md)', maxWidth: '640px', margin: '0 auto' }}>
               {isHindi
                 ? 'देखें कि कैसे अनुमान आधारित खेती से सटीक AI बुद्धिमत्ता की ओर बढ़ना किसानों की उपज व लाभ बदल देता है।'
                 : 'See why transitioning from delayed guesswork to connected intelligence transforms farm productivity.'}
@@ -1542,20 +1529,20 @@ export const LandingPage: React.FC = () => {
               gap: '24px',
             }}
           >
-            {/* TRADITIONAL FARMING */}
+            {/* TRADITIONAL FARMING (Issue 9: Mixed/Title Case Heading) */}
             <div
               className="card"
               style={{
                 padding: '32px',
                 backgroundColor: '#ffffff',
                 borderColor: '#fecaca',
-                borderRadius: '20px',
+                borderRadius: 'var(--radius-xl)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                 <XCircle size={26} color="#ef4444" />
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#991b1b', margin: 0 }}>
-                  {isHindi ? 'पारंपरिक खेती के तरीके' : 'TRADITIONAL FARMING'}
+                <h3 style={{ fontSize: 'var(--fs-xl)', fontWeight: 900, color: '#991b1b', margin: 0 }}>
+                  {isHindi ? 'पारंपरिक खेती के तरीके' : 'Traditional Farming'}
                 </h3>
               </div>
 
@@ -1741,13 +1728,15 @@ export const LandingPage: React.FC = () => {
               <>
                 <button
                   onClick={() => navigate('/dashboard')}
+                  className="btn btn-primary dashboard-btn"
                   style={{
                     backgroundColor: '#16A34A',
                     color: '#ffffff',
+                    minHeight: '48px',
                     padding: '14px 34px',
-                    borderRadius: '14px',
+                    borderRadius: 'var(--radius-md)',
                     fontWeight: 900,
-                    fontSize: '1.02rem',
+                    fontSize: 'var(--fs-md)',
                     border: 'none',
                     cursor: 'pointer',
                     display: 'flex',
@@ -1762,13 +1751,15 @@ export const LandingPage: React.FC = () => {
 
                 <button
                   onClick={() => navigate('/ai')}
+                  className="btn btn-outline"
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.12)',
                     color: '#ffffff',
+                    minHeight: '48px',
                     padding: '14px 28px',
-                    borderRadius: '14px',
+                    borderRadius: 'var(--radius-md)',
                     fontWeight: 700,
-                    fontSize: '1.02rem',
+                    fontSize: 'var(--fs-md)',
                     border: '1.5px solid #DCFCE7',
                     cursor: 'pointer',
                     backdropFilter: 'blur(6px)',
@@ -1785,13 +1776,15 @@ export const LandingPage: React.FC = () => {
               <>
                 <button
                   onClick={() => navigate('/role-selection', { state: { from: { pathname: '/dashboard' } } })}
+                  className="btn btn-outline"
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.12)',
                     color: '#ffffff',
+                    minHeight: '48px',
                     padding: '14px 28px',
-                    borderRadius: '14px',
+                    borderRadius: 'var(--radius-md)',
                     fontWeight: 700,
-                    fontSize: '1.02rem',
+                    fontSize: 'var(--fs-md)',
                     border: '1.5px solid #DCFCE7',
                     cursor: 'pointer',
                     backdropFilter: 'blur(6px)',
@@ -1806,13 +1799,15 @@ export const LandingPage: React.FC = () => {
 
                 <button
                   onClick={() => navigate('/onboarding')}
+                  className="btn btn-primary"
                   style={{
                     backgroundColor: '#16A34A',
                     color: '#ffffff',
+                    minHeight: '48px',
                     padding: '14px 34px',
-                    borderRadius: '14px',
+                    borderRadius: 'var(--radius-md)',
                     fontWeight: 900,
-                    fontSize: '1.02rem',
+                    fontSize: 'var(--fs-md)',
                     border: 'none',
                     cursor: 'pointer',
                     display: 'flex',
@@ -1827,13 +1822,15 @@ export const LandingPage: React.FC = () => {
 
                 <button
                   onClick={() => handleProtectedNavigate('/ai')}
+                  className="btn btn-outline"
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.12)',
                     color: '#ffffff',
+                    minHeight: '48px',
                     padding: '14px 28px',
-                    borderRadius: '14px',
+                    borderRadius: 'var(--radius-md)',
                     fontWeight: 700,
-                    fontSize: '1.02rem',
+                    fontSize: 'var(--fs-md)',
                     border: '1.5px solid #DCFCE7',
                     cursor: 'pointer',
                     backdropFilter: 'blur(6px)',

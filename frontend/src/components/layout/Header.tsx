@@ -130,152 +130,117 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, activePage, onReplay
             AGRI<span style={{ color: '#10b981' }}>NEXT</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', marginTop: '2px' }}>
-            <span style={{ fontSize: '0.53rem', fontWeight: 800, letterSpacing: '0.07em', textTransform: 'uppercase', color: isDark ? '#34d399' : '#047857', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
-              THE AI OPERATING SYSTEM
+            <span className="eyebrow" style={{ whiteSpace: 'nowrap' }}>
+              AI Operating System
             </span>
-            <span style={{ fontSize: '0.50rem', fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: isDark ? '#94a3b8' : '#64748b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
-              FOR MODERN AGRICULTURE
+            <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, letterSpacing: '0.04em', color: isDark ? '#94a3b8' : '#64748b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+              For Modern Agriculture
             </span>
           </div>
         </div>
       </div>
 
-      {/* Top Header Navigation Links */}
-      <nav
-        className="desktop-only"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-          padding: '3px 5px',
-          borderRadius: '12px',
-          border: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
-          margin: '0 12px',
-          overflowX: 'auto',
-          maxWidth: '520px',
-        }}
-      >
-        {activeNavLinks.map((link) => {
-          const isActive =
-            activePage === link.id ||
-            (link.id === 'landing' && activePage === '') ||
-            (link.id === 'farms' && activePage === 'farm') ||
-            (link.id === 'mandi-rates' && (activePage === 'mandi' || activePage === 'mandi-rates')) ||
-            (link.id === 'contact' && (activePage === 'contact' || activePage === 'support'));
-          return (
-            <button
-              key={link.id}
-              onClick={() => onNavigate(link.id)}
-              className="agrinext-nav-btn"
-              style={{
-                border: isActive
-                  ? (isDark ? '1px solid #059669' : '1px solid #cbd5e1')
-                  : '1px solid transparent',
-                backgroundColor: isActive
-                  ? (isDark ? '#064e3b' : '#ffffff')
-                  : 'transparent',
-                color: isActive
-                  ? (isDark ? '#34d399' : '#047857')
-                  : (isDark ? '#cbd5e1' : '#475569'),
-                fontWeight: isActive ? 800 : 600,
-                boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.backgroundColor = isDark ? '#334155' : 'rgba(255,255,255,0.8)';
-                  e.currentTarget.style.color = isDark ? '#f8fafc' : '#0f172a';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = isDark ? '#cbd5e1' : '#475569';
-                }
-              }}
-            >
-              {t(link.labelKey, link.labelFallback)}
-            </button>
-          );
-        })}
-      </nav>
+      {/* Top Header Navigation Links (Public landing/marketing only, removed for auth to eliminate sidebar duplication) */}
+      {!isAuthenticated && (
+        <nav
+          className="desktop-only"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+            padding: '3px 5px',
+            borderRadius: '12px',
+            border: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
+            margin: '0 12px',
+            overflowX: 'auto',
+            maxWidth: '520px',
+          }}
+        >
+          {publicNavLinks.map((link) => {
+            const isActive =
+              activePage === link.id ||
+              (link.id === 'landing' && activePage === '') ||
+              (link.id === 'farms' && activePage === 'farm') ||
+              (link.id === 'mandi-rates' && (activePage === 'mandi' || activePage === 'mandi-rates')) ||
+              (link.id === 'contact' && (activePage === 'contact' || activePage === 'support'));
+            return (
+              <button
+                key={link.id}
+                onClick={() => onNavigate(link.id)}
+                className="agrinext-nav-btn"
+                style={{
+                  border: isActive
+                    ? (isDark ? '1px solid #059669' : '1px solid #cbd5e1')
+                    : '1px solid transparent',
+                  backgroundColor: isActive
+                    ? (isDark ? '#064e3b' : '#ffffff')
+                    : 'transparent',
+                  color: isActive
+                    ? (isDark ? '#34d399' : '#047857')
+                    : (isDark ? '#cbd5e1' : '#475569'),
+                  fontWeight: isActive ? 800 : 600,
+                  boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = isDark ? '#334155' : 'rgba(255,255,255,0.8)';
+                    e.currentTarget.style.color = isDark ? '#f8fafc' : '#0f172a';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = isDark ? '#cbd5e1' : '#475569';
+                  }
+                }}
+              >
+                {t(link.labelKey, link.labelFallback)}
+              </button>
+            );
+          })}
+        </nav>
+      )}
 
       {/* Right Header Action Items */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+      <div className="header-utilities">
         {/* Global Theme Toggle (Sun/Moon) */}
         <ThemeToggle size="md" />
 
         {isAuthenticated ? (
           <>
-            {/* Farm Location Pill */}
+            {/* Farm Location Pill (Issue 5) */}
             <button
-              className="btn btn-secondary"
+              className="location-label"
               onClick={openPicker}
-              style={{
-                padding: '5px 11px',
-                fontSize: '0.8rem',
-                fontWeight: '700',
-                borderRadius: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#f0fdf4',
-                border: isDark ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #bbf7d0',
-                color: isDark ? '#34d399' : '#065f46',
-                maxWidth: '170px',
-                minHeight: '36px',
-              }}
-              title={`${t('farmGps', 'Farm GPS')}: ${farmLoc.formattedAddress || `${farmLoc.village || farmLoc.city}, ${farmLoc.district}`}`}
+              title={`${t('farmGps', 'Farm GPS')}: ${farmLoc.formattedAddress || `${farmLoc.village || farmLoc.city}, ${farmLoc.district}, ${farmLoc.state}`}`}
             >
-              <MapPin size={14} color="#10b981" style={{ flexShrink: 0 }} />
-              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.78rem' }}>
-                {farmLoc.village || farmLoc.city || farmLoc.district}, {farmLoc.state}
+              <MapPin size={15} color="#10b981" style={{ flexShrink: 0 }} />
+              <span className="location-label-text">
+                {farmLoc.formattedAddress || `${farmLoc.village || farmLoc.city || farmLoc.district}, ${farmLoc.state}`}
               </span>
             </button>
 
             {/* Language Selector */}
             <button
-              className="btn btn-secondary"
+              className="utility-control"
               onClick={openLanguageModal}
-              style={{
-                padding: '5px 11px',
-                fontSize: '0.82rem',
-                fontWeight: '700',
-                borderRadius: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                minHeight: '36px',
-                backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                borderColor: isDark ? '#334155' : '#cbd5e1',
-                color: isDark ? '#f8fafc' : '#0f172a',
-              }}
               title={t('chooseLanguage', 'Choose Language')}
             >
-              <Languages size={15} color="#10b981" />
+              <Languages size={16} color="#10b981" />
               <span>{currentMeta.nativeName || 'Language'}</span>
             </button>
 
             {/* Role Switcher Menu */}
             <div style={{ position: 'relative' }}>
               <button
-                className="btn btn-outline"
+                className="utility-control"
                 onClick={() => setShowRoleMenu(!showRoleMenu)}
-                style={{
-                  padding: '5px 11px',
-                  fontSize: '0.82rem',
-                  fontWeight: '700',
-                  borderRadius: '10px',
-                  gap: '5px',
-                  minHeight: '36px',
-                  backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                  borderColor: isDark ? '#334155' : '#cbd5e1',
-                  color: isDark ? '#f8fafc' : '#0f172a',
-                }}
+                title={t('roleSelection', 'Select Role')}
               >
-                <Sparkles size={14} color="#10b981" />
+                <Sparkles size={15} color="#10b981" />
                 <span>{t(rolesList.find(r => r.id === role)?.labelKey || 'roleFarmer')}</span>
-                <ChevronDown size={13} />
+                <ChevronDown size={14} />
               </button>
 
               {showRoleMenu && (
@@ -286,14 +251,14 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, activePage, onReplay
                     right: 0,
                     width: '210px',
                     backgroundColor: isDark ? '#172033' : '#ffffff',
-                    borderRadius: '12px',
-                    boxShadow: isDark ? '0 10px 25px -5px rgba(0, 0, 0, 0.6)' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
-                    border: isDark ? '1px solid #263449' : '1px solid #e2e8f0',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: isDark ? '0 10px 25px -5px rgba(0, 0, 0, 0.6)' : 'var(--shadow-xl)',
+                    border: isDark ? '1px solid #263449' : '1px solid var(--border-color)',
                     padding: '6px 0',
                     zIndex: 50
                   }}
                 >
-                  <div style={{ padding: '6px 14px', fontSize: '0.7rem', fontWeight: '800', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  <div style={{ padding: '6px 14px', fontSize: 'var(--fs-xs)', fontWeight: '800', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     {t('roleSelection', 'Select Role')}
                   </div>
                   {rolesList.map(r => {
@@ -324,7 +289,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, activePage, onReplay
                             ? (isDark ? '#34d399' : 'var(--primary-800)')
                             : (isDark ? '#f8fafc' : 'var(--slate-700)'),
                           fontWeight: isSelected ? '800' : '600',
-                          fontSize: '0.88rem'
+                          fontSize: 'var(--fs-sm)'
                         }}
                       >
                         <Icon size={16} color={isSelected ? '#10b981' : (isDark ? '#94a3b8' : 'var(--slate-500)')} />
@@ -337,19 +302,16 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, activePage, onReplay
             </div>
 
             {/* Notification Bell */}
-            <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => onNavigate('notifications')}>
+            <div
+              style={{ position: 'relative', cursor: 'pointer' }}
+              onClick={() => onNavigate('notifications')}
+              title={t('alerts', 'Notifications')}
+            >
               <div
+                className="utility-control"
                 style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '12px',
-                  backgroundColor: isDark ? '#1e293b' : 'var(--slate-100)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: isDark ? '#f8fafc' : 'var(--slate-700)',
-                  border: isDark ? '1px solid #334155' : '1px solid var(--slate-200)',
-                  transition: 'background-color 0.15s ease'
+                  width: '40px',
+                  padding: 0,
                 }}
               >
                 <Bell size={18} />
@@ -365,7 +327,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, activePage, onReplay
                     borderRadius: '50%',
                     backgroundColor: '#ef4444',
                     color: '#ffffff',
-                    fontSize: '0.7rem',
+                    fontSize: '0.68rem',
                     fontWeight: '800',
                     display: 'flex',
                     alignItems: 'center',
@@ -382,21 +344,27 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, activePage, onReplay
             <div style={{ position: 'relative' }}>
               <div
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '2px 4px', borderRadius: '12px' }}
+                className="utility-control"
+                style={{
+                  height: '40px',
+                  padding: '0 8px',
+                  gap: '8px',
+                }}
               >
                 <img
                   src={currentUser.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80'}
                   alt={currentUser.name}
-                  style={{ width: '36px', height: '36px', borderRadius: '12px', objectFit: 'cover', border: '2px solid #10b981' }}
+                  style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover', border: '1.5px solid #10b981' }}
                 />
-                <div className="desktop-only" style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.84rem', fontWeight: '800', color: isDark ? '#f8fafc' : 'var(--slate-800)', lineHeight: 1.2 }}>
+                <div className="desktop-only" style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                  <span style={{ fontSize: 'var(--fs-xs)', fontWeight: '800', color: isDark ? '#f8fafc' : 'var(--slate-800)', lineHeight: 1.2 }}>
                     {currentUser.name}
                   </span>
-                  <span style={{ fontSize: '0.72rem', color: isDark ? '#94a3b8' : 'var(--slate-500)', fontWeight: '600' }}>
-                    {farmLoc.district || currentUser.district}, {farmLoc.state || currentUser.state}
+                  <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : 'var(--slate-500)', fontWeight: '600', lineHeight: 1.1 }}>
+                    {farmLoc.district || currentUser.district || 'Jaipur'}
                   </span>
                 </div>
+                <ChevronDown size={13} color={isDark ? '#94a3b8' : '#64748b'} />
               </div>
 
               {showUserMenu && (
@@ -416,28 +384,28 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, activePage, onReplay
                 >
                   <div
                     onClick={() => { onNavigate('profile'); setShowUserMenu(false); }}
-                    style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: '600', color: isDark ? '#f8fafc' : '#0f172a' }}
+                    style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: 'var(--fs-sm)', fontWeight: '600', color: isDark ? '#f8fafc' : '#0f172a' }}
                   >
                     <UserIcon size={16} />
                     <span>{t('navProfile', 'Profile')}</span>
                   </div>
                   <div
                     onClick={() => { onNavigate('contact'); setShowUserMenu(false); }}
-                    style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: '600', color: isDark ? '#f8fafc' : '#0f172a' }}
+                    style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: 'var(--fs-sm)', fontWeight: '600', color: isDark ? '#f8fafc' : '#0f172a' }}
                   >
                     <HelpCircle size={16} />
                     <span>{t('navContact', 'Support Desk')}</span>
                   </div>
                   <div
                     onClick={() => { onNavigate('feedback'); setShowUserMenu(false); }}
-                    style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: '600', color: isDark ? '#f8fafc' : '#0f172a' }}
+                    style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: 'var(--fs-sm)', fontWeight: '600', color: isDark ? '#f8fafc' : '#0f172a' }}
                   >
                     <MessageSquare size={16} />
                     <span>{t('navFeedback', 'Give Feedback')}</span>
                   </div>
                   <div
                     onClick={() => { logout(); onNavigate('landing'); setShowUserMenu(false); }}
-                    style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: '700', color: '#ef4444', borderTop: isDark ? '1px solid #263449' : '1px solid #f1f5f9', marginTop: '4px' }}
+                    style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: 'var(--fs-sm)', fontWeight: '700', color: '#ef4444', borderTop: isDark ? '1px solid #263449' : '1px solid #f1f5f9', marginTop: '4px' }}
                   >
                     <LogOut size={16} />
                     <span>{t('logout', 'Sign Out')}</span>
@@ -452,19 +420,12 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, activePage, onReplay
                 logout();
                 onNavigate('landing');
               }}
+              className="utility-control"
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 12px',
-                borderRadius: '10px',
                 backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2',
-                border: isDark ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid #fecaca',
+                borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : '#fecaca',
                 color: '#ef4444',
-                fontSize: '0.82rem',
                 fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'background-color 0.15s ease',
               }}
               title={t('logout', 'Sign Out')}
             >
@@ -475,21 +436,8 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, activePage, onReplay
         ) : (
           <>
             <button
-              className="btn btn-secondary"
+              className="utility-control"
               onClick={openLanguageModal}
-              style={{
-                padding: '6px 12px',
-                fontSize: '0.84rem',
-                fontWeight: '700',
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                minHeight: '38px',
-                backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                borderColor: isDark ? '#334155' : '#cbd5e1',
-                color: isDark ? '#f8fafc' : '#0f172a',
-              }}
               title={t('chooseLanguage', 'Choose Language')}
             >
               <Languages size={16} color="#10b981" />
@@ -499,16 +447,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, activePage, onReplay
             <button
               className="btn btn-outline"
               onClick={() => onNavigate('role-selection')}
-              style={{
-                padding: '6px 14px',
-                fontSize: '0.84rem',
-                fontWeight: '800',
-                borderRadius: '12px',
-                minHeight: '38px',
-                backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                borderColor: isDark ? '#334155' : '#cbd5e1',
-                color: isDark ? '#f8fafc' : '#0f172a',
-              }}
+              style={{ minHeight: '40px', padding: '6px 14px' }}
             >
               {t('signIn', 'Sign In')}
             </button>
@@ -516,7 +455,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, activePage, onReplay
             <button
               className="btn btn-primary"
               onClick={() => onNavigate('role-selection')}
-              style={{ padding: '6px 16px', fontSize: '0.84rem', fontWeight: '800', borderRadius: '12px', minHeight: '38px' }}
+              style={{ minHeight: '40px', padding: '6px 16px' }}
             >
               {t('getStarted', 'Get Started')}
             </button>
