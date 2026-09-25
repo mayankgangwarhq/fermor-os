@@ -1,246 +1,563 @@
-# 🌱 Farmer OS — Full-Stack Agricultural Operating System
+# 🌱 AGRINEXT — Full-Stack Agricultural Intelligence Platform
 
-> An enterprise-grade, scalable full-stack platform designed to power precision farming, crop lifecycle telemetry, AI disease diagnostics, early warning alerts, and direct agricultural market access.
+> **AI-Powered Intelligence for Every Farm**
+> 🌐 Live Demo
+https://agrinextfrontend69.vercel.app/
+
+AGRINEXT is a full-stack agricultural platform designed to help farmers with **crop disease identification, farm management, weather intelligence, pest monitoring, early warnings, crop tracking, and agricultural market information** through a simple and farmer-friendly web interface.
 
 ---
 
-## 🏗️ Architecture Overview
+## 🏗️ System Architecture
 
 ```text
-               +-------------------------------------------------+
-               |                    Farmer UI                    |
-               |       (React 19 + TypeScript + Vite + Router)   |
-               +-------------------------------------------------+
-                                        │
-                                        │ REST API (JSON / JWT)
-                                        ▼
-               +-------------------------------------------------+
-               |                Farmer OS Backend                |
-               |         (Node.js + Express + TypeScript)        |
-               +-------------------------------------------------+
-                                        │
-     ┌──────────────────┬───────────────┴───────────────┬──────────────────┐
-     ▼                  ▼                               ▼                  ▼
-+──────────+   +──────────────────+           +──────────────────+   +───────────+
-| MongoDB  |   | AI Diagnostic    |           | Weather Service  |   | Mandi     |
-| Database |   | Engine (Vision)  |           | (Open-Meteo)     |   | Stream    |
-+──────────+   +──────────────────+           +──────────────────+   +───────────+
+                  ┌──────────────────────────────┐
+                  │        AGRINEXT Web UI       │
+                  │ React + TypeScript + Vite    │
+                  └──────────────┬───────────────┘
+                                 │
+                                 │ REST API / JSON
+                                 ▼
+                  ┌──────────────────────────────┐
+                  │      AGRINEXT Backend        │
+                  │ Node.js + Express + TypeScript│
+                  └──────────────┬───────────────┘
+                                 │
+             ┌───────────────────┼───────────────────┐
+             ▼                   ▼                   ▼
+      ┌─────────────┐    ┌──────────────┐    ┌──────────────┐
+      │   MongoDB   │    │ Disease      │    │ Weather      │
+      │   Database  │    │ Detection    │    │ Open-Meteo   │
+      └─────────────┘    │ Vision API   │    └──────────────┘
+                         └──────────────┘
+                                 │
+                                 ▼
+                       ┌──────────────────┐
+                       │ Mandi / Market   │
+                       │ Data Integration │
+                       └──────────────────┘
 ```
 
 ---
 
-## 🌟 Core Features
+## 🌾 Core Features
 
-- **Farmer Dashboard**: Real-time telemetry prioritizing critical alerts, active crop lifecycles, weather advisories, farm plot summaries, and risk indexes.
-- **Farm Management**: Multi-plot acreage tracking, soil classification (Black, Alluvial, Red, Sandy), irrigation grid types (Drip, Borewell, Canal, Sprinkler), and crop allocation.
-- **Crop Management**: Variety tracking, sowing date milestones, stage progression (`planned`, `sown`, `growing`, `harvest_ready`, `harvested`, `sold`), and yield projections.
-- **AI Disease Detection Pipeline**: Leaf specimen image analysis, confidence score computation, risk level evaluation (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`), and treatment prescription.
-- **Pest Monitoring & IPM**: Comprehensive pest catalog, morphological keys, damage symptoms, and threshold-based organic/chemical interventions.
-- **Hyper-Local Weather Intelligence**: Multi-day forecast, precipitation probability, humidity, wind velocity, and automated spray window advisories.
-- **Early Warning Alert Engine**: Real-time farm alerts across `DISEASE`, `PEST`, `WEATHER`, `IRRIGATION`, and `CROP_RISK` categories with severity levels.
-- **Dual Localization**: Seamless toggle between **English** and **हिन्दी (Hindi)**.
+### 1. Farmer Dashboard
+
+The dashboard provides a single place to view:
+
+* Active crops
+* Farm information
+* Weather conditions
+* Disease-related results
+* Pest risks
+* Important alerts
+* Crop-cycle information
+* Market-related information
 
 ---
 
-## 📂 Project Structure
+### 2. Farm Management
+
+Farmers can maintain information about their agricultural plots, including:
+
+* Farm/plot details
+* Area and location
+* Soil type
+* Irrigation method
+* Crop allocation
+* Multiple farm plots
+
+Supported examples include:
+
+**Soil Types**
+
+* Black
+* Alluvial
+* Red
+* Sandy
+
+**Irrigation**
+
+* Drip
+* Borewell
+* Canal
+* Sprinkler
+
+---
+
+### 3. Crop Management
+
+AGRINEXT allows farmers to track crop activities throughout the crop cycle.
+
+```text
+Planned
+   ↓
+Sown
+   ↓
+Growing
+   ↓
+Harvest Ready
+   ↓
+Harvested
+   ↓
+Sold
+```
+
+Crop records can include:
+
+* Crop name
+* Variety
+* Farm/plot
+* Sowing date
+* Growth stage
+* Expected harvest information
+* Crop status
+
+---
+
+## 🔬 4. Crop Disease Detection
+
+AGRINEXT provides an image-based crop disease analysis workflow.
+
+```text
+Crop / Leaf Image
+       ↓
+Image Upload
+       ↓
+Image Processing
+       ↓
+Vision Analysis
+       ↓
+Possible Disease Identification
+       ↓
+Confidence / Risk Information
+       ↓
+Farmer-Friendly Guidance
+       ↓
+Follow-up Monitoring
+```
+
+The system is designed to make disease information easier for farmers to understand.
+
+> **Important:** AI-generated results are intended as decision-support information and should not replace qualified agricultural expert advice in uncertain or high-risk cases.
+
+---
+
+## 🐛 5. Pest Monitoring
+
+The platform includes pest-related information and monitoring support.
+
+It can organize:
+
+* Pest identification information
+* Visible symptoms
+* Crop affected
+* Risk level
+* Monitoring status
+* Suggested intervention categories
+
+The system can also support **Integrated Pest Management (IPM)** workflows.
+
+---
+
+## 🌦️ 6. Weather Intelligence
+
+AGRINEXT uses weather data to provide agricultural context.
+
+Weather information can include:
+
+* Current conditions
+* Temperature
+* Humidity
+* Rain probability
+* Wind conditions
+* Multi-day forecast
+
+Weather information can support decisions such as:
+
+* Crop monitoring
+* Irrigation planning
+* Spray timing
+* Weather-related risk awareness
+
+---
+
+## 🚨 7. Early Warning & Alerts
+
+AGRINEXT can organize important farm alerts into categories such as:
+
+```text
+DISEASE
+   │
+PEST
+   │
+WEATHER
+   │
+IRRIGATION
+   │
+CROP RISK
+```
+
+Each alert can have a severity level so that important information is easier to identify.
+
+Example:
+
+```text
+Farm Alert
+   ↓
+Risk Detected
+   ↓
+Severity Assessment
+   ↓
+Farmer Notification
+   ↓
+Recommended Next Step
+```
+
+---
+
+## 🛒 8. Mandi & Market Information
+
+AGRINEXT can integrate agricultural market information to help farmers explore:
+
+* Commodity prices
+* Mandi information
+* State
+* District
+* Market
+* Commodity
+* Variety
+
+Market data is intended to provide farmers with better access to available market information.
+
+---
+
+## 🤖 9. Farmer Assistant
+
+The platform can provide a conversational assistant for agriculture-related queries.
+
+Example workflow:
+
+```text
+Farmer Question
+      ↓
+Context / Query Processing
+      ↓
+Agricultural Assistant
+      ↓
+Simple Explanation
+      ↓
+Actionable Guidance
+```
+
+The goal is to communicate information in a **simple and understandable format** rather than using complex technical terminology.
+
+---
+
+## 🌐 10. Language Support
+
+AGRINEXT supports a bilingual interface:
+
+* English
+* हिन्दी
+
+The architecture can be extended to additional Indian languages in future versions.
+
+---
+
+# 🛠️ Technology Stack
+
+## Frontend
+
+* React
+* TypeScript
+* Vite
+* React Router
+* Axios
+* Lucide React
+* Recharts
+
+The frontend provides the farmer-facing web interface and communicates with backend services through REST APIs.
+
+---
+
+## Backend
+
+* Node.js
+* Express.js
+* TypeScript
+* JWT Authentication
+* bcryptjs
+* Helmet
+* CORS
+* Centralized error handling
+
+The backend manages application logic, authentication, data processing, and communication with external services.
+
+---
+
+## Database
+
+### MongoDB
+
+MongoDB can store application data such as:
+
+* User profiles
+* Farm records
+* Crop cycles
+* Disease analysis records
+* Alerts
+* Pest information
+* Follow-up records
+
+---
+
+# 🔌 External Integrations
+
+AGRINEXT is designed to connect with external data/services where required.
+
+### Weather
+
+**Open-Meteo**
+
+Used for weather and forecast information.
+
+### Agricultural Market Data
+
+Market/mandi data integration can provide:
+
+* Commodity
+* Market
+* District
+* State
+* Price-related information
+
+### Vision Analysis
+
+The disease-analysis module provides an interface for connecting a vision-based model/API for crop image analysis.
+
+---
+
+# 📂 Project Structure
 
 ```text
 farmer-os/
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── components/       # Common & Layout UI components
-│   │   ├── pages/            # View pages (Dashboard, Farms, Crops, Disease, etc.)
-│   │   ├── layouts/          # MainLayout & AuthLayout
-│   │   ├── hooks/            # Custom React hooks
-│   │   ├── services/         # Central API client (api.ts) & domain connectors
-│   │   ├── contexts/         # AuthContext, DataContext, LanguageContext, etc.
-│   │   ├── i18n/             # Translations (English & Hindi)
-│   │   ├── utils/            # Helper utilities
-│   │   ├── types/            # TypeScript domain interfaces
-│   │   ├── assets/           # Static assets & icons
-│   │   ├── App.tsx           # React Router declarative routes
-│   │   └── main.tsx          # Frontend bootstrap entrypoint
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── layouts/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   ├── contexts/
+│   │   ├── i18n/
+│   │   ├── utils/
+│   │   ├── types/
+│   │   ├── assets/
+│   │   ├── App.tsx
+│   │   └── main.tsx
 │   │
-│   ├── public/               # Public assets
-│   ├── .env.example          # Frontend environment variables template
-│   ├── package.json          # Frontend dependencies & build scripts
-│   ├── tsconfig.json         # Frontend TypeScript config
-│   └── vite.config.ts        # Vite bundler configuration
+│   ├── public/
+│   ├── .env.example
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── vite.config.ts
 │
 ├── backend/
 │   ├── src/
-│   │   ├── config/           # Database (db.ts) & Env (env.ts) configuration
-│   │   ├── controllers/      # REST API route controllers
-│   │   ├── middleware/       # Auth (JWT), Validation, Error handling middleware
-│   │   ├── models/           # Mongoose schemas (User, Farmer, Farm, Crop, etc.)
-│   │   ├── routes/           # Express router endpoints
-│   │   ├── services/         # Business logic & AI/ML abstractions
-│   │   ├── utils/            # ApiResponse, ApiError, Logger utilities
-│   │   ├── types/            # Backend domain types & interfaces
-│   │   ├── app.ts            # Express application setup
-│   │   └── server.ts         # Server bootstrap & connection manager
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── utils/
+│   │   ├── types/
+│   │   ├── app.ts
+│   │   └── server.ts
 │   │
-│   ├── .env.example          # Backend environment variables template
-│   ├── package.json          # Backend dependencies & scripts
-│   └── tsconfig.json         # Backend TypeScript config
+│   ├── .env.example
+│   ├── package.json
+│   └── tsconfig.json
 │
-├── README.md                 # Complete system documentation
-├── .gitignore                # Root gitignore rules
-└── package.json              # Root script coordinator
+├── README.md
+├── .gitignore
+└── package.json
 ```
 
 ---
 
-## 🛠️ Tech Stack
+# 📡 REST API Structure
 
-### Frontend
-- **React 19** with **TypeScript**
-- **Vite** for optimized HMR and bundling
-- **React Router v7** for declarative SPA navigation
-- **Lucide React** for modern agricultural icons
-- **Axios** for centralized HTTP API communication
-- **Recharts** for agricultural data visualizations
+AGRINEXT follows a REST-based backend architecture.
 
-### Backend
-- **Node.js** with **Express** & **TypeScript**
-- **MongoDB** with **Mongoose** ORM
-- **JWT (jsonwebtoken)** & **bcryptjs** for authentication
-- **Helmet** & **CORS** for HTTP security
-- **Morgan** for request logging
-- **Centralized Error Handling** & standardized JSON responses
+| Method | Endpoint                | Purpose                      |
+| ------ | ----------------------- | ---------------------------- |
+| GET    | `/api/health`           | Check backend/service status |
+| POST   | `/api/auth/register`    | Register user                |
+| POST   | `/api/auth/login`       | User authentication          |
+| GET    | `/api/auth/me`          | Get authenticated user       |
+| GET    | `/api/farms`            | Get farm records             |
+| POST   | `/api/farms`            | Create farm                  |
+| GET    | `/api/farms/:id`        | Get farm details             |
+| PUT    | `/api/farms/:id`        | Update farm                  |
+| DELETE | `/api/farms/:id`        | Delete farm                  |
+| GET    | `/api/crops`            | Get crop records             |
+| POST   | `/api/crops`            | Create crop cycle            |
+| PUT    | `/api/crops/:id/status` | Update crop status           |
+| POST   | `/api/diseases/detect`  | Analyze crop image           |
+| GET    | `/api/diseases`         | Disease information          |
+| GET    | `/api/pests`            | Pest information             |
+| GET    | `/api/weather`          | Current weather              |
+| GET    | `/api/weather/forecast` | Weather forecast             |
+| GET    | `/api/alerts`           | Farm alerts                  |
+| PUT    | `/api/alerts/:id/read`  | Mark alert as read           |
 
 ---
 
-## ⚙️ Environment Configuration
+# ⚙️ Environment Configuration
 
-### Frontend (`frontend/.env.example`)
+### Frontend
+
 ```env
 VITE_API_URL=http://localhost:5000/api
 ```
 
-### Backend (`backend/.env.example`)
+### Backend
+
 ```env
 PORT=5000
 NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/farmer_os
-JWT_SECRET=farmer_os_super_secret_jwt_key_2026
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_secure_secret
 JWT_EXPIRES_IN=7d
 CLIENT_URL=http://localhost:5173
-WEATHER_API_KEY=
 ```
+
+> Production secrets and API keys should be stored in environment variables and should never be committed to GitHub.
 
 ---
 
-## 🚀 Quick Start & Installation
+# 🚀 Local Setup
 
-### 1. Clone & Install All Dependencies
-From the root directory:
+### 1. Install Dependencies
+
 ```bash
 npm run install:all
 ```
-*Or install separately:*
-```bash
-# Backend
-cd backend && npm install
 
-# Frontend
-cd frontend && npm install
+Or separately:
+
+```bash
+cd backend
+npm install
+
+cd ../frontend
+npm install
 ```
 
-### 2. Configure Environment Files
-```bash
-# In frontend/
-cp .env.example .env
+### 2. Configure Environment Variables
 
-# In backend/
-cp .env.example .env
+Create:
+
+```text
+frontend/.env
+backend/.env
 ```
 
-### 3. Run Both Servers Concurrently
-From root directory:
+and configure the required values.
+
+### 3. Start Backend
+
 ```bash
+cd backend
 npm run dev
 ```
 
-*Or run individually in separate terminals:*
-```bash
-# Terminal 1 (Backend - Port 5000)
-npm run dev:backend
-
-# Terminal 2 (Frontend - Port 5173)
-npm run dev:frontend
-```
-
----
-
-## 📡 REST API Reference
-
-All responses follow the standard JSON envelope:
-```json
-{
-  "success": true,
-  "message": "Request successful",
-  "data": {}
-}
-```
-
-### Core Endpoints
-
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| `GET` | `/api/health` | Service health, uptime & DB status | No |
-| `POST` | `/api/auth/register` | Register a new farmer/user | No |
-| `POST` | `/api/auth/login` | Authenticate user & issue JWT | No |
-| `GET` | `/api/auth/me` | Retrieve authenticated profile | Yes (Bearer) |
-| `GET` | `/api/farms` | List farmer's land plots | Optional |
-| `POST` | `/api/farms` | Register a new farm plot | Optional |
-| `GET` | `/api/farms/:id` | Get specific farm details | No |
-| `PUT` | `/api/farms/:id` | Update farm parameters | No |
-| `DELETE` | `/api/farms/:id` | Delete farm & associated cycles | No |
-| `GET` | `/api/crops` | List crop cycles with filters | Optional |
-| `POST` | `/api/crops` | Create new crop cycle | Optional |
-| `PUT` | `/api/crops/:id/status` | Update crop growth status | No |
-| `GET` | `/api/diseases` | Browse disease catalog | No |
-| `POST` | `/api/diseases/detect` | AI disease detection & diagnosis | Optional |
-| `GET` | `/api/pests` | List pest identification profiles | No |
-| `GET` | `/api/weather` | Current weather & alerts | No |
-| `GET` | `/api/weather/forecast` | 7-day weather forecast | No |
-| `GET` | `/api/alerts` | Query active farm alerts | Optional |
-| `PUT` | `/api/alerts/:id/read` | Mark alert as acknowledged | No |
-| `PUT` | `/api/alerts/read-all` | Mark all alerts read | Optional |
-
----
-
-## 🧠 Future AI/ML Vision Model Integration
-
-The `backend/src/services/diseaseDetection.service.ts` module provides a clean interface for integrating custom Computer Vision (CV) models (PyTorch, TensorFlow, ONNX Runtime, or Vertex AI).
+Backend:
 
 ```text
-Image Input (Base64 / Multipart)
-      ↓
-Preprocessing & Normalization (224x224 RGB)
-      ↓
-Deep CNN / Vision Transformer (e.g. ResNet50 / EfficientNet)
-      ↓
-Softmax Multi-Class Probability
-      ↓
-Pathology Matching & Recommendation Rule Engine
-      ↓
-Diagnostic Result (Confidence %, Organic & Chemical Protocol)
+http://localhost:5000
+```
+
+### 4. Start Frontend
+
+In another terminal:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Frontend:
+
+```text
+http://localhost:5173
 ```
 
 ---
 
-## 🔒 Security Best Practices
+# 🔐 Security
 
-- **Zero Secret Exposure**: All database URIs, JWT secrets, and third-party API keys remain exclusively on the backend.
-- **Helmet Headers**: Protects against common web vulnerabilities (XSS, clickjacking, MIME sniffing).
-- **Password Hashing**: Industry-standard `bcryptjs` salted hashing.
-- **CORS Restricted**: Backend restricts origin access strictly to configured frontend domains.
+AGRINEXT follows basic application-security practices:
+
+* JWT-based authentication
+* Password hashing using bcryptjs
+* Environment-based secret management
+* CORS configuration
+* Helmet security headers
+* Backend-side API credentials
+* Centralized error handling
+* Input validation where required
+
+Sensitive credentials such as database passwords, JWT secrets, and API keys should remain on the backend.
 
 ---
 
-## 📄 License
+# 🧠 Future Development
 
-MIT © 2026 Farmer OS. Built for modern agricultural enterprises.
+The current architecture can be extended with:
+
+* Custom crop-disease CV models
+* TensorFlow / PyTorch / ONNX model integration
+* Offline/low-connectivity support
+* More Indian languages
+* Expert consultation workflow
+* Farm-level risk prediction
+* IoT soil sensors
+* Drone-based crop monitoring
+* Satellite imagery
+* Advanced crop yield analytics
+* More agricultural market integrations
+
+---
+
+# 🌱 Vision
+
+AGRINEXT aims to bring important agricultural information into one accessible platform:
+
+```text
+             FARMER
+                │
+       ┌────────┼────────┐
+       ▼        ▼        ▼
+     FARM     CROP    WEATHER
+       │        │        │
+       └────────┼────────┘
+                ▼
+       DISEASE + PEST
+                │
+                ▼
+        EARLY WARNINGS
+                │
+                ▼
+       MARKET INFORMATION
+                │
+                ▼
+        BETTER DECISIONS
+```
+
+**AGRINEXT — AI-Powered Intelligence for Every Farm**
+
